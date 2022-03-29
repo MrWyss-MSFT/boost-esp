@@ -34,7 +34,7 @@ Function Install-ScheduledTask {
     $Trigger = New-ScheduledTaskTrigger -AtStartup
     $User = "NT AUTHORITY\SYSTEM"
     $Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-NoProfile -NoLogo -NonInteractive -ExecutionPolicy Bypass -Command ""& {$OnlineScript}"""
-    Register-ScheduledTask -TaskName $TaskName -Trigger $Trigger -User $User -Action $Action -RunLevel Highest –Force | out-null
+    Register-ScheduledTask -TaskName $TaskName -Trigger $Trigger -User $User -Action $Action -RunLevel Highest -Force | out-null
     
     $TargetTask = Get-ScheduledTask -TaskName $TaskName 
     

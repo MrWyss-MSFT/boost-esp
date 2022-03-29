@@ -6,10 +6,8 @@
   Gets Enrollment Status Page (ESP) status from WMI, if the device is in ESP it sets the PowerMode
   to whatever is specified in $DesiredModeGuid as well the sleep timeout on AC vallue to $DesiredSleepTimeoutOnACInMinutes
 
-  .EXAMPLE
-  .
-
 #>
+
 #Requires -RunAsAdministrator
 
 #region vars
@@ -296,7 +294,7 @@ Function Get-Loggedonuser {
     }
     
     
-    $logon_sessions | % {
+    $logon_sessions | ForEach-Object {
         $starttime = $_.StartTime
     
         $loggedonuser = New-Object -TypeName psobject

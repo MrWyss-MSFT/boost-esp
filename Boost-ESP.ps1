@@ -327,7 +327,7 @@ Function Get-LoggedOnUserSID {
     process {
         try {
             New-PSDrive -Name HKU -PSProvider Registry -Root Registry::HKEY_USERS | Out-Null
-            (Get-ChildItem HKU: | where { $_.Name -match 'S-\d-\d+-(\d+-){1,14}\d+$' }).PSChildName
+            (Get-ChildItem HKU: | Where-Object { $_.Name -match 'S-\d-\d+-(\d+-){1,14}\d+$' }).PSChildName
         } catch {
             Write-Error -Message "Error: $($_.Exception.Message) - Line Number: $($_.InvocationInfo.ScriptLineNumber)"
             $false
@@ -343,7 +343,7 @@ Function Get-LoggedOnUserSID {
 "----------------------------------------------------- Start Boost-ESP -----------------------------------------------------" | Write-Log
 "LogFile Location: {0}" -f $PSDefaultParameterValues.'Write-Log:Path' | Write-Log
 "RegPath Location: {0}" -f $PSDefaultParameterValues.'*-Config:RegPath' | Write-Log
-"Last Bootup Time: {0}" -f (Get-CimInstance win32_operatingsystem | select lastbootuptime).lastbootuptime | Write-Log
+"Last Bootup Time: {0}" -f (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime | Write-Log
 
 $EspDeviceCompleted = Test-ESPCompletedRegistry 
 $EspUserCompleted = Test-ESPCompletedRegistry -UserSID (Get-LoggedOnUserSID)

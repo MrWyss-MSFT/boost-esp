@@ -10,6 +10,7 @@
   .
 
 #>
+#Requires -RunAsAdministrator
 
 #region vars
 $modes = @{ 

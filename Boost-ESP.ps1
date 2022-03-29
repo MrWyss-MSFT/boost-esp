@@ -357,7 +357,7 @@ $EspUserCompleted = Test-ESPCompletedRegistry -UserSID (Get-LoggedOnUserSID)
 foreach ($user in (Get-Loggedonuser)) {
     "  UserName: {0} | Type: {1} | Auth: {2} | StartTime: {3} | Session: {4}" -f $User.User, $User.Type, $User.Auth, $User.StartTime, $User.Session | Write-Log
 }
-$EspUserCompleted = $true
+
 If ($EspDeviceCompleted -and $EspUserCompleted) {
     "Revert Mode" | Write-log -Type Warning
 

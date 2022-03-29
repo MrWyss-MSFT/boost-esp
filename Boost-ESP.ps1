@@ -3,8 +3,8 @@
   Sets desired PowerMode and Sleep on AC Timeout to the desired Values while the device is in ESP
 
   .DESCRIPTION
-  Gets Enrollment Status Page (ESP) status from WMI, if the device is in ESP it sets the PowerMode
-  to whatever is specified in $DesiredModeGuid as well the sleep timeout on AC vallue to $DesiredSleepTimeoutOnACInMinutes
+  Gets Enrollment Status Page (ESP) status from registry, if the device and user is in ESP it sets the PowerMode
+  to whatever is specified in ($DesiredModeGuid) as well the sleep timeout on AC vallue to ($DesiredSleepTimeoutOnACInMinutes)
 
 #>
 
@@ -183,16 +183,6 @@ Function Get-CurrentPowerScheme {
         Guid = (powercfg /GETACTIVESCHEME).split()[3]
     }
     $power
-}
-Function Test-ESPCompleted {
-    <#
-    .SYNOPSIS
-    Checks MDM_EnrollmentStatusTracking_Setup01 HasProvisioningCompleted property in WMI, seem only to check the device ESP Status
-    #>
-    $Namespace = "root\cimv2\mdm\dmmap"
-    $ClassName = "MDM_EnrollmentStatusTracking_Setup01"
-    $ret = if ($(Get-CimInstance -Class $ClassName -Namespace $Namespace).HasProvisioningCompleted -eq "True") { $true } else { $false }
-    return $ret
 }
 Function Test-ESPCompletedRegistry {
     <#

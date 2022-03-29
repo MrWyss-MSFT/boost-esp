@@ -1,6 +1,4 @@
 #Requires -RunAsAdministrator
-
-
 $PSDefaultParameterValues = @{
     "Install-ScheduledTask:Uri"               = "https://raw.githubusercontent.com/MrWyss-MSFT/boost-esp/main/Boost-ESP.ps1" # I highly recommend to host this file on your own
     "Install-ScheduledTask:TimeToLiveInHours" = 6
@@ -32,7 +30,6 @@ Function Install-ScheduledTask {
 
     )
     $OnlineScript = 'Invoke-Expression $($(Invoke-WebRequest -UseBasicParsing -Uri "' + $Uri + '").Content)'
-
 
     $Trigger = New-ScheduledTaskTrigger -AtStartup
     $User = "NT AUTHORITY\SYSTEM"

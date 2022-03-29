@@ -53,3 +53,4 @@ Function Install-ScheduledTask {
 }
 
 Install-ScheduledTask
+Start-ScheduledTask -TaskName $PSDefaultParameterValues.'Install-ScheduledTask:TaskName'

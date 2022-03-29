@@ -197,7 +197,8 @@ Function Test-ESPCompletedRegistry {
 
     if ($UserSID -ne "") {
         $RegPath = "HKLM:\SOFTWARE\Microsoft\Windows\Autopilot\EnrollmentStatusTracking\{0}\Setup" -f $UserSID
-    } else {
+    }
+    else {
         $RegPath = "HKLM:\SOFTWARE\Microsoft\Windows\Autopilot\EnrollmentStatusTracking\Device\Setup"
     }
     try {
@@ -262,8 +263,12 @@ Function Test-Config {
         [String]
         $RegPath
     )
-    if ($null -ne (Get-Item -Path $RegPath).GetValue($PreScriptValue)) {
-        return $true
+    if (Test-Path -Path $RegPath)
+    {
+        if ($null -ne (Get-Item -Path $RegPath).GetValue($PreScriptValue)) {
+            return $true
+        }
+        
     }
     else {
         $false
@@ -327,7 +332,8 @@ Function Get-LoggedOnUserSID {
         try {
             New-PSDrive -Name HKU -PSProvider Registry -Root Registry::HKEY_USERS | Out-Null
             (Get-ChildItem HKU: | Where-Object { $_.Name -match 'S-\d-\d+-(\d+-){1,14}\d+$' }).PSChildName
-        } catch {
+        }
+        catch {
             Write-Error -Message "Error: $($_.Exception.Message) - Line Number: $($_.InvocationInfo.ScriptLineNumber)"
             $false
         }
@@ -351,7 +357,7 @@ $EspUserCompleted = Test-ESPCompletedRegistry -UserSID (Get-LoggedOnUserSID)
 foreach ($user in (Get-Loggedonuser)) {
     "  UserName: {0} | Type: {1} | Auth: {2} | StartTime: {3} | Session: {4}" -f $User.User, $User.Type, $User.Auth, $User.StartTime, $User.Session | Write-Log
 }
-
+$EspUserCompleted = $true
 If ($EspDeviceCompleted -and $EspUserCompleted) {
     "Revert Mode" | Write-log -Type Warning
 
@@ -409,8 +415,14 @@ else {
     #endregion
 
     #region Save Config
-    "Save Config" | Write-Log -Type Warning
-    Save-Config -PreScriptPowerModeGuid $CurrentPowerMode.Value -PreScriptSleepTimeOutOnACInMinutes $SleepOnAC.Minutes 
+    if ((Test-Config -PreScriptValue PreScriptPowerModeGuid) -eq $false) {
+        "Save Config" | Write-Log -Type Warning
+        Save-Config -PreScriptPowerModeGuid $CurrentPowerMode.Value -PreScriptSleepTimeOutOnACInMinutes $SleepOnAC.Minutes
+    }
+    else {
+        "Config already saved" | Write-Log -Type Warning
+    }
+   
     #endregion
 }
 "------------------------------------------------------ End Boost-ESP ------------------------------------------------------" | Write-Log

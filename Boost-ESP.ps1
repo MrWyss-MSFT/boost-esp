@@ -187,7 +187,7 @@ Function Get-CurrentPowerScheme {
 Function Test-ESPCompleted {
     <#
     .SYNOPSIS
-    Checks MDM_EnrollmentStatusTracking_Setup01 HasProvisioningCompleted property in WMI
+    Checks MDM_EnrollmentStatusTracking_Setup01 HasProvisioningCompleted property in WMI, seem only to check the device ESP Status
     #>
     $Namespace = "root\cimv2\mdm\dmmap"
     $ClassName = "MDM_EnrollmentStatusTracking_Setup01"
@@ -199,9 +199,26 @@ Function Test-ESPCompletedRegistry {
     .SYNOPSIS
     Don't know if this is reliable
     #>
-    $val = Get-ItemPropertyValue -Path HKLM:\SOFTWARE\Microsoft\Windows\Autopilot\EnrollmentStatusTracking\Device\Setup -Name HasProvisioningCompleted
-    $val = '0x{0:x}‘ -f $val
-    [bool][int32]$val
+    param (
+        [Parameter(Mandatory = $false)]
+        [string]$UserSID
+        
+    )
+    $RegPath = ""
+
+    if ($UserSID -ne "") {
+        $RegPath = "HKLM:\SOFTWARE\Microsoft\Windows\Autopilot\EnrollmentStatusTracking\{0}\Setup" -f $UserSID
+    } else {
+        $RegPath = "HKLM:\SOFTWARE\Microsoft\Windows\Autopilot\EnrollmentStatusTracking\Device\Setup"
+    }
+    try {
+        $val = Get-ItemPropertyValue -Path $RegPath -Name HasProvisioningCompleted -ErrorAction Stop 
+        $val = '0x{0:x}‘ -f $val
+        [bool][int32]$val
+    }
+    catch {
+        $false
+    }
 }
 Function Save-Config {
     <#
@@ -308,20 +325,48 @@ Function Get-Loggedonuser {
     }
     
 }
+Function Get-LoggedOnUserSID {
+    <#
+    .SYNOPSIS
+    This function queries the registry to find the SID of the user that's currently logged onto the computer interactively.
+    ref: https://adamtheautomator.com/powershell-get-user-sid/
+    #>
+    [CmdletBinding()]
+    param ()
+    
+    process {
+        try {
+            New-PSDrive -Name HKU -PSProvider Registry -Root Registry::HKEY_USERS | Out-Null
+            (Get-ChildItem HKU: | where { $_.Name -match 'S-\d-\d+-(\d+-){1,14}\d+$' }).PSChildName
+        } catch {
+            Write-Error -Message "Error: $($_.Exception.Message) - Line Number: $($_.InvocationInfo.ScriptLineNumber)"
+            $false
+        }
+    }
+}
+
+
+
 #endregion
 
 #region logic
 "----------------------------------------------------- Start Boost-ESP -----------------------------------------------------" | Write-Log
 "LogFile Location: {0}" -f $PSDefaultParameterValues.'Write-Log:Path' | Write-Log
 "RegPath Location: {0}" -f $PSDefaultParameterValues.'*-Config:RegPath' | Write-Log
+"Last Bootup Time: {0}" -f (Get-CimInstance win32_operatingsystem | select lastbootuptime).lastbootuptime | Write-Log
+
+$EspDeviceCompleted = Test-ESPCompletedRegistry 
+$EspUserCompleted = Test-ESPCompletedRegistry -UserSID (Get-LoggedOnUserSID)
+"ESP Completion state for the user is: {0} " -f $EspUserCompleted | Write-Log
+"ESP Completion state for the device is: {0}" -f $EspDeviceCompleted | Write-Log
+
 "List Logged On Users" | Write-Log
 foreach ($user in (Get-Loggedonuser)) {
     "  UserName: {0} | Type: {1} | Auth: {2} | StartTime: {3} | Session: {4}" -f $User.User, $User.Type, $User.Auth, $User.StartTime, $User.Session | Write-Log
 }
 
-$EspCompleted = Test-ESPCompleted #Not sure why I am doing this
-If ($EspCompleted) {
-    "Device is not in ESP" | Write-Log
+If ($EspDeviceCompleted -and $EspUserCompleted) {
+    "Revert Mode" | Write-log -Type Warning
 
     #region Revert previously saved PowerMode if it was saved
     if (Test-Config -PreScriptValue "PreScriptPowerModeGuid") {
@@ -344,7 +389,7 @@ If ($EspCompleted) {
     #endregion
 }
 else {
-    "Device is in ESP" | Write-Log 
+    "Set Mode" | Write-log -Type Warning
     "Desired PowerMode: {0}" -F $DesiredModeGuid | Write-Log
     "Desired Sleep Timout on AC in Mintues: {0}" -f $DesiredSleepTimeoutOnACInMinutes | Write-Log
 

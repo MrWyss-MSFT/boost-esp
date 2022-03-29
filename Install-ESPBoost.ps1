@@ -37,9 +37,9 @@ Function Install-ScheduledTask {
     $Trigger = New-ScheduledTaskTrigger -AtStartup
     $User = "NT AUTHORITY\SYSTEM"
     $Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-NoProfile -NoLogo -NonInteractive -ExecutionPolicy Bypass -Command ""& {$OnlineScript}"""
-    Register-ScheduledTask -TaskName $TaskName -Trigger $Trigger -User $User -Action $Action -RunLevel Highest –Force
+    Register-ScheduledTask -TaskName $TaskName -Trigger $Trigger -User $User -Action $Action -RunLevel Highest –Force | out-null
     
-    $TargetTask = Get-ScheduledTask -TaskName $TaskName
+    $TargetTask = Get-ScheduledTask -TaskName $TaskName 
     
     # Set desired tweaks
     $TargetTask.Author = $Author
@@ -51,7 +51,7 @@ Function Install-ScheduledTask {
     $TargetTask.Settings.volatile = $False
     
     # Save tweaks to the Scheduled Task
-    $TargetTask | Set-ScheduledTask
+    $TargetTask | Set-ScheduledTask | Out-Null
 
 }
 

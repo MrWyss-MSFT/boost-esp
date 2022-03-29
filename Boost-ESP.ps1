@@ -5,7 +5,6 @@
   .DESCRIPTION
   Gets Enrollment Status Page (ESP) status from registry, if the device and user is in ESP it sets the PowerMode
   to whatever is specified in ($DesiredModeGuid) as well the sleep timeout on AC vallue to ($DesiredSleepTimeoutOnACInMinutes)
-
 #>
 
 #Requires -RunAsAdministrator
@@ -334,21 +333,19 @@ Function Get-LoggedOnUserSID {
         }
     }
 }
-
-
-
 #endregion
 
 #region logic
 "----------------------------------------------------- Start Boost-ESP -----------------------------------------------------" | Write-Log
-"LogFile Location: {0}" -f $PSDefaultParameterValues.'Write-Log:Path' | Write-Log
-"RegPath Location: {0}" -f $PSDefaultParameterValues.'*-Config:RegPath' | Write-Log
-"Last Bootup Time: {0}" -f (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime | Write-Log
+"LogFile Location      : {0}" -f $PSDefaultParameterValues.'Write-Log:Path' | Write-Log
+"RegPath Location      : {0}" -f $PSDefaultParameterValues.'*-Config:RegPath' | Write-Log
+"Time Zone             : {0}" -f (Get-TimeZone | select-object DisplayName).DisplayName | Write-Log
+"Last Bootup Time      : {0}" -f (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime | Write-Log
 
 $EspDeviceCompleted = Test-ESPCompletedRegistry 
 $EspUserCompleted = Test-ESPCompletedRegistry -UserSID (Get-LoggedOnUserSID)
-"ESP Completion state for the user is: {0} " -f $EspUserCompleted | Write-Log
-"ESP Completion state for the device is: {0}" -f $EspDeviceCompleted | Write-Log
+"User ESP Completion   : {0} " -f $EspUserCompleted | Write-Log
+"Device ESP Completion : {0}" -f $EspDeviceCompleted | Write-Log
 
 "List Logged On Users" | Write-Log
 foreach ($user in (Get-Loggedonuser)) {

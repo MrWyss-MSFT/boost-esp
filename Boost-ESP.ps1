@@ -349,21 +349,49 @@ Function Get-LoggedOnUserSID {
         }
     }
 }
+function Test-ProcessForUser {
+    <#
+    .SYNOPSIS
+    Checks if the given process is running for the given user
+    #>
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory, HelpMessage = 'UserName')]
+        [string]
+        $UserName,
+        [Parameter(Mandatory, HelpMessage = 'Process Name')]
+        [string]
+        $ProcessName
+    )
+    $Proc = Get-Process $ProcessName -IncludeUserName -ErrorAction SilentlyContinue
+    if ($Proc) {
+        if ($Proc.UserName -eq $UserName) {
+            return $true
+        }
+        else {
+            return $false
+        }
+    }
+    else {
+        return $false
+    }
+}
 #endregion
 
 #region logic
 "----------------------------------------------------- Start Boost-ESP -----------------------------------------------------" | Write-Log
-"LogFile Location      : {0}" -f $PSDefaultParameterValues.'Write-Log:Path' | Write-Log
-"RegPath Location      : {0}" -f $PSDefaultParameterValues.'*-Config:RegPath' | Write-Log
-"Time Zone             : {0}" -f (Get-TimeZone | select-object DisplayName).DisplayName | Write-Log
-"Last Bootup Time      : {0}" -f (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime | Write-Log
+"LogFile Location             : {0}" -f $PSDefaultParameterValues.'Write-Log:Path' | Write-Log
+"RegPath Location             : {0}" -f $PSDefaultParameterValues.'*-Config:RegPath' | Write-Log
+"Time Zone                    : {0}" -f (Get-TimeZone | select-object DisplayName).DisplayName | Write-Log
+"Last Bootup Time             : {0}" -f (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime | Write-Log
+"WWAhost.exe as defaultuser0  : {0}" -f (Test-ProcessForUser -UserName "defaultuser0" -ProcessName "WWAhost.exe" ).ToString() | Write-Log
 
 $EspDeviceCompleted = Test-ESPCompleted
 $EspUserCompleted = Test-ESPCompleted -UserSID (Get-LoggedOnUserSID)
-"User ESP Completion   : {0} " -f $EspUserCompleted | Write-Log
-"Device ESP Completion : {0}" -f $EspDeviceCompleted | Write-Log
+"User ESP Completion          : {0}" -f $EspUserCompleted | Write-Log
+"Device ESP Completion        : {0}" -f $EspDeviceCompleted | Write-Log
 
-"List Logged On Users" | Write-Log
+"List Logged On Users:" | Write-Log
 foreach ($user in (Get-Loggedonuser)) {
     "  UserName: {0} | Type: {1} | Auth: {2} | StartTime: {3} | Session: {4}" -f $User.User, $User.Type, $User.Auth, $User.StartTime, $User.Session | Write-Log
 }

@@ -1,12 +1,12 @@
 # boost-esp
-This is a **proof of concept**, if setting Best_performance mode and disabling sleep during the Enrollment Status Page decreases the deploy time and avoids the devices going into sleep mode.
+This is a **proof of concept**, if setting Best_performance mode and disabling sleep during the Enrollment Status Page (ESP) decreases the deploy time and avoids the devices going into sleep mode.
 
 
 ## [Install-ESPBoost.ps1](Install-ESPBoost.ps1) 
 
 registers a **scheduled task**, that runs as **system**. It has a trigger on **system startup**. It **runs a powershell script** that is hosted **online**. In this case the [Boost-ESP.ps1](Boost-ESP.ps1) script. The scheduled task **expires** and therefore destroys itself after a given period of time. 
 
-⚠️⚠️ **_replace change the URI to your version of Boost-ESP.ps1_** I don't want to system privileges on your system, fork the repository.
+⚠️⚠️ **_change the URI to your version of Boost-ESP.ps1_** I don't want to system privileges on your system, fork the repository.
 
 All the **$PSDefaultParameterValues** are for you to change
 
@@ -18,10 +18,10 @@ $PSDefaultParameterValues = @{
     "Install-ScheduledTask:TaskName"          = "Boost-ESP"
 }
 ```
-This script is meant to be added in Endpoint Admin Manager admin center (Intune) _Devices | Scripts_. Simply upload the **modifed** script and assign it to your e.g. autopilot devices. Once run, usually early on in the Enrollment Status Page (ESP), it registers the scheduled task which in turn, runs the other script specified in Install-ScheduledTask:Uri every boot.
+This script is meant to be added in Endpoint Admin Manager admin center (Intune) _Devices | Scripts_. Simply upload the **modifed** script and assign it to your e.g. autopilot devices. Once run, usually early on in the ESP, it registers the scheduled task which in turn, runs the other script specified in Install-ScheduledTask:Uri every boot.
 
 ## [Boost-ESP.ps1](Boost-ESP.ps1)
-This script goal is to configure **two** power related settings, **while** the device is in **ESP**. It will save the original values to the registry and reverts back to them, once the machine is out of the ESP.
+This script goal is to configure **two** power related settings, **while** the device is in **ESP**. It will save the original values to the registry and **reverts back** to them, once the machine is out of the ESP.
 
 1️⃣ set power mode to **Best performance**
 
@@ -61,7 +61,7 @@ $PSDefaultParameterValues = @{
 You might have different mode guids for different oem devices. I am not sure about this yet.
 Registry Path as to where it saves the original power settings values.
 
-The log file is best readable with **OneTrace** as it uses a monospaces font.
+The log file is best viewed with **OneTrace** as it uses a monospaces font.
 
 ## ToDo
 - [ ] Better ESP completion test, this is currently hit and miss

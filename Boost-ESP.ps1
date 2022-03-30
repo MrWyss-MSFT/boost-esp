@@ -389,7 +389,7 @@ Function Test-InESP {
 "User ESP completed (unreliable)     : {0}" -f (Test-ESPCompleted -UserSID (Get-LoggedOnUserSID)).ToString() | Write-Log
 "Device ESP completed (unreliable)   : {0}" -f (Test-ESPCompleted).ToString() | Write-Log
 "ESP                                 : {0}" -f (Test-InESP).ToString() | Write-Log -Type Warning
-"List Logged On Users                : {0}" -f (Get-Loggedonuser | ConvertTo-Json) | Write-Log
+"List Logged On Users                : {0}" -f (Get-Loggedonuser | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 
 If (Test-InESP -eq $false) {
     "Revert Mode" | Write-log -Type Warning

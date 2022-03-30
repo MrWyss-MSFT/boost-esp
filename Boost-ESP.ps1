@@ -79,7 +79,7 @@ Function Write-Log {
 
     if ($ConsoleOutput.IsPresent) {
         switch ($Type) {
-            1 { $ForgroundColor = (get-host).ui.rawui.ForegroundColor }
+            1 { $ForgroundColor = "White" }
             2 { $ForgroundColor = "Yellow" }
             3 { $ForgroundColor = "Red" }
         }

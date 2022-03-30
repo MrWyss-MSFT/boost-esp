@@ -46,6 +46,7 @@ Function Install-ScheduledTask {
     $TargetTask.Settings.DeleteExpiredTaskAfter = 'PT0S'
     $TargetTask.Settings.ExecutionTimeLimit = 'PT1H'
     $TargetTask.Settings.volatile = $False
+    $TargetTask.Settings.DisallowStartIfOnBatteries = $False
     
     # Save tweaks to the Scheduled Task
     $TargetTask | Set-ScheduledTask | Out-Null

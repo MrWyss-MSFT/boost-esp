@@ -389,10 +389,7 @@ Function Test-InESP {
 "User ESP completed (unreliable)     : {0}" -f (Test-ESPCompleted -UserSID (Get-LoggedOnUserSID)).ToString() | Write-Log
 "Device ESP completed (unreliable)   : {0}" -f (Test-ESPCompleted).ToString() | Write-Log
 "ESP                                 : {0}" -f (Test-InESP).ToString() | Write-Log -Type Warning
-"List Logged On Users:" | Write-Log
-foreach ($user in (Get-Loggedonuser)) {
-    "  UserName: {0} | Type: {1} | Auth: {2} | StartTime: {3} | Session: {4}" -f $User.User, $User.Type, $User.Auth, $User.StartTime, $User.Session | Write-Log
-}
+"List Logged On Users                : {0}" -f (Get-Loggedonuser | ConvertTo-Json) | Write-Log
 
 If (Test-InESP -eq $false) {
     "Revert Mode" | Write-log -Type Warning

@@ -343,99 +343,42 @@ Function Get-LoggedOnUserSID {
         }
     }
 }
-function Test-ProcessForUser {
-    <#
-    .SYNOPSIS
-    Checks if the given process is running for the given user (regex) and commandline (regex)
-    #>
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory, HelpMessage = 'UserName')]
-        [string]
-        $UserName,
-        [Parameter(Mandatory, HelpMessage = 'Process Name')]
-        [string]
-        $ProcessName,
-        [Parameter(Mandatory, HelpMessage = 'Command Line')]
-        [string]
-        $CommandLine
-    )
-    $Proc = Get-Process $ProcessName -IncludeUserName -ErrorAction SilentlyContinue
-    
-    if ($Proc -and ($Proc.UserName -match $UserName) -and $Proc.CommandLine -match $CommandLine) {
-        return $true
-    }
-    else {
-        return $false
-    }
-}
-Function Get-ProcessForUser {
-    <#
-.SYNOPSIS
-Retruns the given process is running for the given user and command line
-#>
-    [CmdletBinding()]
-    param (
-        [Parameter(Mandatory, HelpMessage = 'UserName')]
-        [string]
-        $UserName,
-        [Parameter(Mandatory, HelpMessage = 'Process Name')]
-        [string]
-        $ProcessName,
-        [Parameter(Mandatory, HelpMessage = 'Command Line')]
-        [string]
-        $CommandLine
-    )
-    $Proc = Get-Process $ProcessName -IncludeUserName -ErrorAction SilentlyContinue | Where-Object UserName -match $UserName | Where-Object CommandLine -Match $CommandLine | Select-Object ProcessName, UserName, CommandLine
-    $Proc
-}
+
 #endregion
 
 #region logic
 "----------------------------------------------------- Start Boost-ESP -----------------------------------------------------" | Write-Log
-"LogFile Location             : {0}" -f $PSDefaultParameterValues.'Write-Log:Path' | Write-Log
-"RegPath Location             : {0}" -f $PSDefaultParameterValues.'*-Config:RegPath' | Write-Log
-"Time Zone                    : {0}" -f (Get-TimeZone | select-object DisplayName).DisplayName | Write-Log
-"Last Bootup Time             : {0}" -f (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime | Write-Log
-
-#region DEBUG TEST
-$DevicePreparation = $False
-foreach ($Waahost in (Get-ProcessForUser -UserName ".*" -ProcessName "WWAhost.exe" -CommandLine "app.wwa") ) {
-    "DevicePreparation" | Write-Log
-    "  Process: {0} User: {1} Commandline: {2}" -f $Waahost.ProcessName, $Waahost.UserName, $Waahost.commandline | Write-Log
-    $DevicePreparation = $True
-}
-
-$DeviceSetup = $False
-foreach ($Waahost in (Get-ProcessForUser -UserName "defaultuser0" -ProcessName "exlorer.exe" -CommandLine ".*") ) {
-    "DeviceSetup" | Write-Log
-    "  Process: {0} User: {1} Commandline: {2}" -f $Waahost.ProcessName, $Waahost.UserName, $Waahost.commandline | Write-Log
-    $DeviceSetup = $True
-}
-
-$AccountSetup = $False
-foreach ($Waahost in (Get-ProcessForUser -UserName "^((?!defaultuser0).)*$" -ProcessName "explorer" -CommandLine ".*") ) {
-    "AccountSetup" | Write-Log
-    "  Process: {0} User: {1} Commandline: {2}" -f $Waahost.ProcessName, $Waahost.UserName, $Waahost.commandline | Write-Log
-    $AccountSetup = $True
-}
-
-"DevicePreparation            : {0}" -f $DevicePreparation.ToString() | Write-Log
-"DeviceSetup                  : {0}" -f $DeviceSetup.ToString() | Write-Log
-"AccountSetup                 : {0}" -f $AccountSetup.ToString() | Write-Log
-#endregion
+"LogFile Location                    : {0}" -f $PSDefaultParameterValues.'Write-Log:Path' | Write-Log
+"RegPath Location                    : {0}" -f $PSDefaultParameterValues.'*-Config:RegPath' | Write-Log
+"Time Zone                           : {0}" -f (Get-TimeZone | select-object DisplayName).DisplayName | Write-Log
+"Last Bootup Time                    : {0}" -f (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime | Write-Log
 
 $EspDeviceCompleted = Test-ESPCompleted
 $EspUserCompleted = Test-ESPCompleted -UserSID (Get-LoggedOnUserSID)
-"User ESP Completion          : {0}" -f $EspUserCompleted | Write-Log
-"Device ESP Completion        : {0}" -f $EspDeviceCompleted | Write-Log
+"User ESP Completion (unreliable)    : {0}" -f $EspUserCompleted | Write-Log
+"Device ESP Completion (unreliable)  : {0}" -f $EspDeviceCompleted | Write-Log
+
+"wwahost.exe ServerName:App.wwa procs:" | Write-Log
+$InESP = $false
+$wwahostProcs = Get-Process -Name "wwahost" -IncludeUserName -ErrorAction SilentlyContinue | Select-Object ProcessName, UserName, CommandLine | Where-Object CommandLine -like "*ServerName:App.wwa*"
+if ($wwahostProcs) {
+    $InESP = $True
+    foreach ($wwahost in $wwahostProcs) {
+        "  Process: {0} User: {1} Commandline: {2}" -f $wwahost.ProcessName, $wwahost.UserName, $wwahost.commandline | Write-Log
+    }
+} else {
+    "  N/A" | Write-Log
+    $InESP = $False
+}
+
+"Device in ESP (wwahost)             : {0}" -f $InESP.ToString() | Write-Log -Type Warning
 
 "List Logged On Users:" | Write-Log
 foreach ($user in (Get-Loggedonuser)) {
     "  UserName: {0} | Type: {1} | Auth: {2} | StartTime: {3} | Session: {4}" -f $User.User, $User.Type, $User.Auth, $User.StartTime, $User.Session | Write-Log
 }
 
-If ($EspDeviceCompleted -and $EspUserCompleted) {
+If ($InESP -eq $false) {
     "Revert Mode" | Write-log -Type Warning
 
     #region Revert previously saved PowerMode if it was saved

@@ -183,7 +183,7 @@ Function Get-CurrentPowerScheme {
     }
     $power
 }
-Function Test-ESPCompletedRegistry {
+Function Test-ESPCompleted {
     <#
     .SYNOPSIS
     Don't know if this is reliable
@@ -197,18 +197,22 @@ Function Test-ESPCompletedRegistry {
 
     if ($UserSID -ne "") {
         $RegPath = "HKLM:\SOFTWARE\Microsoft\Windows\Autopilot\EnrollmentStatusTracking\{0}\Setup" -f $UserSID
+        try {
+            $val = Get-ItemPropertyValue -Path $RegPath -Name HasProvisioningCompleted -ErrorAction Stop 
+            $val = '0x{0:x}‘ -f $val
+            [bool][int32]$val
+        }
+        catch {
+            $false
+        }
     }
     else {
-        $RegPath = "HKLM:\SOFTWARE\Microsoft\Windows\Autopilot\EnrollmentStatusTracking\Device\Setup"
+        $Namespace = "root\cimv2\mdm\dmmap"
+        $ClassName = "MDM_EnrollmentStatusTracking_Setup01"
+        $ret = if ($(Get-CimInstance -Class $ClassName -Namespace $Namespace).HasProvisioningCompleted -eq "True") { $true } else { $false }
+        return $ret
     }
-    try {
-        $val = Get-ItemPropertyValue -Path $RegPath -Name HasProvisioningCompleted -ErrorAction Stop 
-        $val = '0x{0:x}‘ -f $val
-        [bool][int32]$val
-    }
-    catch {
-        $false
-    }
+    
 }
 Function Save-Config {
     <#
@@ -263,8 +267,7 @@ Function Test-Config {
         [String]
         $RegPath
     )
-    if (Test-Path -Path $RegPath)
-    {
+    if (Test-Path -Path $RegPath) {
         if ($null -ne (Get-Item -Path $RegPath).GetValue($PreScriptValue)) {
             return $true
         }
@@ -348,8 +351,8 @@ Function Get-LoggedOnUserSID {
 "Time Zone             : {0}" -f (Get-TimeZone | select-object DisplayName).DisplayName | Write-Log
 "Last Bootup Time      : {0}" -f (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime | Write-Log
 
-$EspDeviceCompleted = Test-ESPCompletedRegistry 
-$EspUserCompleted = Test-ESPCompletedRegistry -UserSID (Get-LoggedOnUserSID)
+$EspDeviceCompleted = Test-ESPCompleted
+$EspUserCompleted = Test-ESPCompleted -UserSID (Get-LoggedOnUserSID)
 "User ESP Completion   : {0} " -f $EspUserCompleted | Write-Log
 "Device ESP Completion : {0}" -f $EspDeviceCompleted | Write-Log
 

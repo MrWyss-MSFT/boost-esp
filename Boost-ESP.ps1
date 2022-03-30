@@ -191,7 +191,6 @@ Function Test-ESPCompleted {
     param (
         [Parameter(Mandatory = $false)]
         [string]$UserSID
-        
     )
     $RegPath = ""
 
@@ -207,10 +206,18 @@ Function Test-ESPCompleted {
         }
     }
     else {
-        $Namespace = "root\cimv2\mdm\dmmap"
-        $ClassName = "MDM_EnrollmentStatusTracking_Setup01"
-        $ret = if ($(Get-CimInstance -Class $ClassName -Namespace $Namespace).HasProvisioningCompleted -eq "True") { $true } else { $false }
-        return $ret
+        $RegPath = "HKLM:\SOFTWARE\Microsoft\Windows\Autopilot\EnrollmentStatusTracking\Device\Setup"
+        try {
+            $val = Get-ItemPropertyValue -Path $RegPath -Name HasProvisioningCompleted -ErrorAction Stop
+            $val = '0x{0:x}‘ -f $val
+            [bool][int32]$val
+        }
+        catch {
+            $Namespace = "root\cimv2\mdm\dmmap"
+            $ClassName = "MDM_EnrollmentStatusTracking_Setup01"
+            $ret = if ($(Get-CimInstance -Class $ClassName -Namespace $Namespace).HasProvisioningCompleted -eq "True") { $true } else { $false }
+            return $ret
+        }
     }
     
 }

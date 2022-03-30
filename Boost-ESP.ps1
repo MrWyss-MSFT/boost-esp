@@ -343,7 +343,40 @@ Function Get-LoggedOnUserSID {
         }
     }
 }
-
+Function Test-InESP {
+    <#
+    .SYNOPSIS
+    Checks if device is in the enrollment status page (ESP).
+    ref: https://www.reddit.com/r/Intune/comments/otpgnp/ps_app_deploy_toolkit_esp/
+    #>
+    $ESPCloudHost = @(Get-CimInstance -ClassName 'Win32_Process' -Filter "Name like 'CloudExperienceHostBroker.exe'" -ErrorAction 'SilentlyContinue')
+    $ESPWWAHost = @(Get-CimInstance -ClassName 'Win32_Process' -Filter "Name like 'WWAHost.exe'" -ErrorAction 'SilentlyContinue')
+    $ExplorerProcesses = @(Get-CimInstance -ClassName 'Win32_Process' -Filter "Name like 'explorer.exe'" -ErrorAction 'SilentlyContinue')
+    $ESPCount = 0
+    $ESPCount = $ESPCloudHost.Count + $ESPWWAHost.Count
+    $InESP = $true
+    if ($ExplorerProcesses.Count -eq 0 -Or $ESPCount -ne 0) {
+        if ($ExplorerProcesses.Count -eq 0) {
+            $InESP = $false
+        }
+        elseif ($ESPCount -ne 0) {
+            $InESP = $true
+        }
+    }
+    else {
+        foreach ($TargetProcess in $ExplorerProcesses) {
+            $Username = (Invoke-CimMethod -InputObject $TargetProcess -MethodName GetOwner).User
+        }
+    
+        if ($UserName -ne 'defaultuser0') {
+            $InESP = $false
+        }
+        else {
+            $InESP = $true
+        }
+    }
+    return $InESP
+}
 #endregion
 
 #region logic
@@ -353,30 +386,15 @@ Function Get-LoggedOnUserSID {
 "Time Zone                           : {0}" -f (Get-TimeZone | select-object DisplayName).DisplayName | Write-Log
 "Last Bootup Time                    : {0}" -f (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime | Write-Log
 "Device on AC (null = no battery)    : {0}" -f (Get-CimInstance -Namespace root/WMI -ClassName BatteryStatus -ErrorAction SilentlyContinue).PowerOnline | Write-Log
-"User ESP Completion (unreliable)    : {0}" -f (Test-ESPCompleted -UserSID (Get-LoggedOnUserSID)).ToString() | Write-Log
-"Device ESP Completion (unreliable)  : {0}" -f (Test-ESPCompleted).ToString() | Write-Log
-
-"wwahost.exe ServerName:App.wwa procs:" | Write-Log
-$InESP = $false
-$wwahostProcs = Get-Process -Name "wwahost" -IncludeUserName -ErrorAction SilentlyContinue | Select-Object ProcessName, UserName, CommandLine | Where-Object CommandLine -like "*ServerName:App.wwa*"
-if ($wwahostProcs) {
-    $InESP = $True
-    foreach ($wwahost in $wwahostProcs) {
-        "  Process: {0} User: {1} Commandline: {2}" -f $wwahost.ProcessName, $wwahost.UserName, $wwahost.commandline | Write-Log
-    }
-} else {
-    "  N/A" | Write-Log
-    $InESP = $False
-}
-
-"Device in ESP (wwahost)             : {0}" -f $InESP.ToString() | Write-Log -Type Warning
-
+"User ESP completed (unreliable)     : {0}" -f (Test-ESPCompleted -UserSID (Get-LoggedOnUserSID)).ToString() | Write-Log
+"Device ESP completed (unreliable)   : {0}" -f (Test-ESPCompleted).ToString() | Write-Log
+"ESP                                 : {0}" -f (Test-InESP).ToString() | Write-Log -Type Warning
 "List Logged On Users:" | Write-Log
 foreach ($user in (Get-Loggedonuser)) {
     "  UserName: {0} | Type: {1} | Auth: {2} | StartTime: {3} | Session: {4}" -f $User.User, $User.Type, $User.Auth, $User.StartTime, $User.Session | Write-Log
 }
 
-If ($InESP -eq $false) {
+If (Test-InESP -eq $false) {
     "Revert Mode" | Write-log -Type Warning
 
     #region Revert previously saved PowerMode if it was saved
@@ -441,9 +459,5 @@ else {
     }
     #endregion
 }
-
-"Procdump" | Write-Log -Type Error
-Get-Process -IncludeUserName -ErrorAction SilentlyContinue | Select-Object ProcessName, UserName, CommandLine | ConvertTo-Json | out-file "c:\procdump$(-join (1..20 | ForEach {[char]((97..122) + (48..57) | Get-Random)})).json"
-"Procdump complete" | Write-Log -Type Error
 "------------------------------------------------------ End Boost-ESP ------------------------------------------------------" | Write-Log
 #endregion logic

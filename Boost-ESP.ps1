@@ -346,7 +346,7 @@ Function Get-LoggedOnUserSID {
 function Test-ProcessForUser {
     <#
     .SYNOPSIS
-    Checks if the given process is running for the given user
+    Checks if the given process is running for the given user (regex) and commandline (regex)
     #>
     [CmdletBinding()]
     param (
@@ -355,20 +355,39 @@ function Test-ProcessForUser {
         $UserName,
         [Parameter(Mandatory, HelpMessage = 'Process Name')]
         [string]
-        $ProcessName
+        $ProcessName,
+        [Parameter(Mandatory, HelpMessage = 'Command Line')]
+        [string]
+        $CommandLine
     )
     $Proc = Get-Process $ProcessName -IncludeUserName -ErrorAction SilentlyContinue
-    if ($Proc) {
-        if ($Proc.UserName -match $UserName) {
-            return $true
-        }
-        else {
-            return $false
-        }
+    
+    if ($Proc -and ($Proc.UserName -match $UserName) -and $Proc.CommandLine -match $CommandLine) {
+        return $true
     }
     else {
         return $false
     }
+}
+Function Get-ProcessForUser {
+    <#
+.SYNOPSIS
+Retruns the given process is running for the given user and command line
+#>
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory, HelpMessage = 'UserName')]
+        [string]
+        $UserName,
+        [Parameter(Mandatory, HelpMessage = 'Process Name')]
+        [string]
+        $ProcessName,
+        [Parameter(Mandatory, HelpMessage = 'Command Line')]
+        [string]
+        $CommandLine
+    )
+    $Proc = Get-Process $ProcessName -IncludeUserName -ErrorAction SilentlyContinue | Where-Object UserName -match $UserName | Where-Object CommandLine -Match $CommandLine | Select-Object ProcessName, UserName, CommandLine
+    $Proc
 }
 #endregion
 
@@ -378,7 +397,33 @@ function Test-ProcessForUser {
 "RegPath Location             : {0}" -f $PSDefaultParameterValues.'*-Config:RegPath' | Write-Log
 "Time Zone                    : {0}" -f (Get-TimeZone | select-object DisplayName).DisplayName | Write-Log
 "Last Bootup Time             : {0}" -f (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime | Write-Log
-"WWAhost.exe as defaultuser0  : {0}" -f (Test-ProcessForUser -UserName "defaultuser0" -ProcessName "WWAhost.exe" ).ToString() | Write-Log
+
+#region DEBUG TEST
+$DevicePreparation = $False
+foreach ($Waahost in (Get-ProcessForUser -UserName ".*" -ProcessName "WWAhost.exe" -CommandLine "app.wwa") ) {
+    "DevicePreparation" | Write-Log
+    "  Process: {0} User: {1} Commandline: {2}" -f $Waahost.ProcessName, $Waahost.UserName, $Waahost.commandline | Write-Log
+    $DevicePreparation = $True
+}
+
+$DeviceSetup = $False
+foreach ($Waahost in (Get-ProcessForUser -UserName "defaultuser0" -ProcessName "exlorer.exe" -CommandLine ".*") ) {
+    "DeviceSetup" | Write-Log
+    "  Process: {0} User: {1} Commandline: {2}" -f $Waahost.ProcessName, $Waahost.UserName, $Waahost.commandline | Write-Log
+    $DeviceSetup = $True
+}
+
+$AccountSetup = $False
+foreach ($Waahost in (Get-ProcessForUser -UserName "^((?!defaultuser0).)*$" -ProcessName "explorer" -CommandLine ".*") ) {
+    "AccountSetup" | Write-Log
+    "  Process: {0} User: {1} Commandline: {2}" -f $Waahost.ProcessName, $Waahost.UserName, $Waahost.commandline | Write-Log
+    $AccountSetup = $True
+}
+
+"DevicePreparation            : {0}" -f $DevicePreparation.ToString() | Write-Log
+"DeviceSetup                  : {0}" -f $DeviceSetup.ToString() | Write-Log
+"AccountSetup                 : {0}" -f $AccountSetup.ToString() | Write-Log
+#endregion
 
 $EspDeviceCompleted = Test-ESPCompleted
 $EspUserCompleted = Test-ESPCompleted -UserSID (Get-LoggedOnUserSID)

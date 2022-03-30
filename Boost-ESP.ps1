@@ -3,7 +3,7 @@
   Sets desired PowerMode and Sleep on AC Timeout to the desired Values while the device is in ESP
 
   .DESCRIPTION
-  Gets Enrollment Status Page (ESP) status from registry, if the device and user is in ESP it sets the PowerMode
+  Gets Enrollment Status Page (ESP) status, if the device and user is in ESP it sets the PowerMode
   to whatever is specified in ($DesiredModeGuid) as well the sleep timeout on AC vallue to ($DesiredSleepTimeoutOnACInMinutes)
 #>
 
@@ -441,5 +441,9 @@ else {
     }
     #endregion
 }
+
+"Procdump" | Write-Log -Type Error
+Get-Process -IncludeUserName -ErrorAction SilentlyContinue | Select-Object ProcessName, UserName, CommandLine | ConvertTo-Json | out-file "c:\procdump$(-join (1..20 | ForEach {[char]((97..122) + (48..57) | Get-Random)})).json"
+"Procdump" | Write-Log -Type Error
 "------------------------------------------------------ End Boost-ESP ------------------------------------------------------" | Write-Log
 #endregion logic

@@ -384,7 +384,7 @@ If ($EspDeviceCompleted -and $EspUserCompleted) {
 else {
     "Set Mode" | Write-log -Type Warning
     "Desired PowerMode: {0}" -F $DesiredModeGuid | Write-Log
-    "Desired Sleep Timout on AC in Mintues: {0}" -f $DesiredSleepTimeoutOnACInMinutes | Write-Log
+    "Desired Sleep Timeout on AC in Mintues: {0}" -f $DesiredSleepTimeoutOnACInMinutes | Write-Log
 
     #region Set Power Mode
     $CurrentPowerMode = Get-PowerMode

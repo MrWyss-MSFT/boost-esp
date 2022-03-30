@@ -6,7 +6,7 @@ This is a **proof of concept**, if setting Best_performance mode and disabling s
 
 registers a **scheduled task**, that runs as **system**. It has a trigger on **system startup**. It **runs a powershell script** that is hosted **online**. In this case the [Boost-ESP.ps1](Boost-ESP.ps1) script. The scheduled task **expires** and therefore destroys itself after a given period of time. 
 
-⚠️⚠️ **_change the URI to your version of Boost-ESP.ps1_** I don't want to system privileges on your system, fork the repository.
+⚠️⚠️ **_change the URI to your hosted version of Boost-ESP.ps1_** I don't want system privileges on your systems, fork the repository. ⚠️⚠️
 
 All the **$PSDefaultParameterValues** are for you to change
 

@@ -352,11 +352,9 @@ Function Get-LoggedOnUserSID {
 "RegPath Location                    : {0}" -f $PSDefaultParameterValues.'*-Config:RegPath' | Write-Log
 "Time Zone                           : {0}" -f (Get-TimeZone | select-object DisplayName).DisplayName | Write-Log
 "Last Bootup Time                    : {0}" -f (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime | Write-Log
-
-$EspDeviceCompleted = Test-ESPCompleted
-$EspUserCompleted = Test-ESPCompleted -UserSID (Get-LoggedOnUserSID)
-"User ESP Completion (unreliable)    : {0}" -f $EspUserCompleted | Write-Log
-"Device ESP Completion (unreliable)  : {0}" -f $EspDeviceCompleted | Write-Log
+"Device on AC (null = no battery)    : {0}" -f (Get-CimInstance -Namespace root/WMI -ClassName BatteryStatus -ErrorAction SilentlyContinue).PowerOnline | Write-Log
+"User ESP Completion (unreliable)    : {0}" -f (Test-ESPCompleted -UserSID (Get-LoggedOnUserSID)).ToString() | Write-Log
+"Device ESP Completion (unreliable)  : {0}" -f (Test-ESPCompleted).ToString() | Write-Log
 
 "wwahost.exe ServerName:App.wwa procs:" | Write-Log
 $InESP = $false

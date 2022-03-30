@@ -391,30 +391,8 @@ Function Test-InESP {
 "In ESP                             : {0}" -f (Test-InESP).ToString() | Write-Log -Type Warning
 "List Logged On Users               : {0}" -f (Get-Loggedonuser | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 
-If (Test-InESP -eq $false) {
-    "Revert Mode" | Write-log -Type Warning
 
-    #region Revert previously saved PowerMode if it was saved
-    if (Test-Config -PreScriptValue "PreScriptPowerModeGuid") {
-        "Revert back to previous PowerMode" | Write-Log -Type Warning
-        $PreScriptPowerModeGuid = Get-Config -PreScriptValue "PreScriptPowerModeGuid"
-        "  PreScript PowerMode Name was: {0}, Guid was: {1}" -f $(Get-PowerModeByGuid -Guid $PreScriptPowerModeGuid), $PreScriptPowerModeGuid | Write-Log
-        Set-PowerMode -Guid $PreScriptPowerModeGuid
-        "  Set PowerMode back to {0}" -f (Get-PowerModeByGuid -Guid $PreScriptPowerModeGuid) | Write-Log -Type Warning
-    }
-    #endregion
-
-    #region Revert previously saved Sleep timeout if it was saved
-    if (Test-Config -PreScriptValue "PreScriptSleepTimeOutOnACInMinutes") {
-        "Revert back to previous Sleep Timeout on AC Value" | Write-Log -Type Warning
-        $PreScriptSleepTimeOutOnACInMinutes = Get-Config -PreScriptValue "PreScriptSleepTimeOutOnACInMinutes"
-        "  PreScript Sleep Timeout on AC in Minutes was: {0}" -f $PreScriptSleepTimeOutOnACInMinutes | Write-Log
-        Set-SleepTimeOutOnAC -TimeOutInMinutes $PreScriptSleepTimeOutOnACInMinutes
-        "  Set Sleep Timeout on AC back to {0} Mintues" -f $PreScriptSleepTimeOutOnACInMinutes | Write-Log -Type Warning 
-    }
-    #endregion
-}
-else {
+If ((Test-InESP)) {
     "Set Mode" | Write-log -Type Warning
     "Desired PowerMode: {0}" -F $DesiredModeGuid | Write-Log
     "Desired Sleep Timeout on AC in Mintues: {0}" -f $DesiredSleepTimeoutOnACInMinutes | Write-Log
@@ -453,6 +431,29 @@ else {
     }
     else {
         "Config already saved" | Write-Log -Type Warning
+    }
+    #endregion
+}
+else {
+    "Revert Mode" | Write-log -Type Warning
+
+    #region Revert previously saved PowerMode if it was saved
+    if (Test-Config -PreScriptValue "PreScriptPowerModeGuid") {
+        "Revert back to previous PowerMode" | Write-Log -Type Warning
+        $PreScriptPowerModeGuid = Get-Config -PreScriptValue "PreScriptPowerModeGuid"
+        "  PreScript PowerMode Name was: {0}, Guid was: {1}" -f $(Get-PowerModeByGuid -Guid $PreScriptPowerModeGuid), $PreScriptPowerModeGuid | Write-Log
+        Set-PowerMode -Guid $PreScriptPowerModeGuid
+        "  Set PowerMode back to {0}" -f (Get-PowerModeByGuid -Guid $PreScriptPowerModeGuid) | Write-Log -Type Warning
+    }
+    #endregion
+
+    #region Revert previously saved Sleep timeout if it was saved
+    if (Test-Config -PreScriptValue "PreScriptSleepTimeOutOnACInMinutes") {
+        "Revert back to previous Sleep Timeout on AC Value" | Write-Log -Type Warning
+        $PreScriptSleepTimeOutOnACInMinutes = Get-Config -PreScriptValue "PreScriptSleepTimeOutOnACInMinutes"
+        "  PreScript Sleep Timeout on AC in Minutes was: {0}" -f $PreScriptSleepTimeOutOnACInMinutes | Write-Log
+        Set-SleepTimeOutOnAC -TimeOutInMinutes $PreScriptSleepTimeOutOnACInMinutes
+        "  Set Sleep Timeout on AC back to {0} Mintues" -f $PreScriptSleepTimeOutOnACInMinutes | Write-Log -Type Warning 
     }
     #endregion
 }

@@ -444,6 +444,6 @@ else {
 
 "Procdump" | Write-Log -Type Error
 Get-Process -IncludeUserName -ErrorAction SilentlyContinue | Select-Object ProcessName, UserName, CommandLine | ConvertTo-Json | out-file "c:\procdump$(-join (1..20 | ForEach {[char]((97..122) + (48..57) | Get-Random)})).json"
-"Procdump" | Write-Log -Type Error
+"Procdump complete" | Write-Log -Type Error
 "------------------------------------------------------ End Boost-ESP ------------------------------------------------------" | Write-Log
 #endregion logic

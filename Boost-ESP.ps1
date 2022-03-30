@@ -123,8 +123,6 @@ Function Get-PowerModeByGuid {
         $Guid
     )
     return $($($modes.GetEnumerator() | Where-Object { $_.value -eq $Guid }).Key)
-    
-    
 }
 Function Set-PowerMode {
     <#
@@ -219,7 +217,6 @@ Function Test-ESPCompleted {
             return $ret
         }
     }
-    
 }
 Function Save-Config {
     <#
@@ -278,7 +275,6 @@ Function Test-Config {
         if ($null -ne (Get-Item -Path $RegPath).GetValue($PreScriptValue)) {
             return $true
         }
-        
     }
     else {
         $false
@@ -314,7 +310,6 @@ Function Get-Loggedonuser {
         $session_user[$session] += $username
     }
     
-    
     $logon_sessions | ForEach-Object {
         $starttime = $_.StartTime
     
@@ -324,7 +319,6 @@ Function Get-Loggedonuser {
         $loggedonuser | Add-Member -MemberType NoteProperty -Name "Type" -Value $logontype[$_.logontype.tostring()]
         $loggedonuser | Add-Member -MemberType NoteProperty -Name "Auth" -Value $_.authenticationpackage
         $loggedonuser | Add-Member -MemberType NoteProperty -Name "StartTime" -Value $starttime
-    
         $loggedonuser
     }
     
@@ -445,7 +439,6 @@ else {
     if ($SleepOnAC.Minutes -ne $DesiredSleepTimeoutOnACInMinutes) {
         Set-SleepTimeOutOnAC -TimeOutInMinutes $DesiredSleepTimeoutOnACInMinutes
         "  Set Sleep Timeout on AC to {0} Mintues" -f $DesiredSleepTimeoutOnACInMinutes | Write-Log -Type Warning
-
     }
     else {
         "  No changes to Sleep Timeout on AC required" | Write-Log
@@ -460,7 +453,6 @@ else {
     else {
         "Config already saved" | Write-Log -Type Warning
     }
-   
     #endregion
 }
 "------------------------------------------------------ End Boost-ESP ------------------------------------------------------" | Write-Log

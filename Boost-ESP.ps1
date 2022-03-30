@@ -359,7 +359,7 @@ function Test-ProcessForUser {
     )
     $Proc = Get-Process $ProcessName -IncludeUserName -ErrorAction SilentlyContinue
     if ($Proc) {
-        if ($Proc.UserName -eq $UserName) {
+        if ($Proc.UserName -match $UserName) {
             return $true
         }
         else {

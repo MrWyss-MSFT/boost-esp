@@ -76,7 +76,6 @@ Function Write-Log {
         "Error" { [int]$Type = 3 }
     }
 
-
     if ($ConsoleOutput.IsPresent) {
         switch ($Type) {
             1 { $ForgroundColor = "White" }
@@ -391,7 +390,6 @@ Function Test-InESP {
 "In ESP                             : {0}" -f (Test-InESP).ToString() | Write-Log -Type Warning
 "List Logged On Users               : {0}" -f (Get-Loggedonuser | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "List running processes             : {0}" -f (Get-Process -IncludeUserName | Select-Object -Property  ProcessName, PriorityClass, UserName | ConvertTo-Json -EnumsAsStrings) | Write-Log -ConsoleOutput:$false
-
 
 If ((Test-InESP)) {
     "Set Mode" | Write-log -Type Warning

@@ -67,7 +67,7 @@ Registry Path as to where it saves the original power settings values.
 The log file is best viewed with **OneTrace** as it uses a monospaces font.
 
 ## ToDo
-- [ ] Better ESP completion test, this is currently hit and miss
+- [x] Better ESP completion test, this is currently hit and miss
 - [ ] Win11 test and screenshot
 - [ ] Test with SkipUserStatusPage
 

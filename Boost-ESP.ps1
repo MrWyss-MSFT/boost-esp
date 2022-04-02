@@ -390,7 +390,7 @@ $CurrentSleepOnAC = Get-SleepTimeOutOnAC -SchemeGuid $CurrentPowerScheme.Guid
 "Device on AC (null = no battery)   : {0}" -f (Get-CimInstance -Namespace root/WMI -ClassName BatteryStatus -ErrorAction SilentlyContinue).PowerOnline | Write-Log
 "Current Power Scheme Name          : {0}" -f ($CurrentPowerScheme.Name) | Write-Log
 "Current Power Mode Name            : {0}" -f ($CurrentPowerMode.Name) | Write-Log
-"Current Power Mode GUID            : {0}" -f ($CurrentPowerMode.Value) | Write-Log
+"Current Power Mode Guid            : {0}" -f ($CurrentPowerMode.Value) | Write-Log
 "Current Sleep on AC Value (min)    : {0}" -f ($CurrentSleepOnAC.Minutes) | Write-Log
 "Device ESP completed (unreliable)  : {0}" -f (Test-ESPCompleted).ToString() | Write-Log
 "User ESP completed (unreliable)    : {0}" -f (Test-ESPCompleted -UserSID (Get-LoggedOnUserSID)).ToString() | Write-Log
@@ -442,9 +442,9 @@ else {
     if (Test-Config -PreScriptValue "PreScriptPowerModeGuid") {
         "Revert back to previous PowerMode" | Write-Log -Type Warning
         $PreScriptPowerModeGuid = Get-Config -PreScriptValue "PreScriptPowerModeGuid"
-        "  PreScript PowerMode Name was: {0}, Guid was: {1}" -f $(Get-PowerModeByGuid -Guid $PreScriptPowerModeGuid), $PreScriptPowerModeGuid | Write-Log
+        "  PreScript PowerMode              : {0}, Guid was: {1}" -f $(Get-PowerModeByGuid -Guid $PreScriptPowerModeGuid), $PreScriptPowerModeGuid | Write-Log
         Set-PowerMode -Guid $PreScriptPowerModeGuid
-        "  Set PowerMode back to {0}" -f (Get-PowerModeByGuid -Guid $PreScriptPowerModeGuid) | Write-Log -Type Warning
+        "  Revert PowerMode                 : {0}" -f (Get-PowerModeByGuid -Guid $PreScriptPowerModeGuid) | Write-Log -Type Warning
     }
     else {
         "  PreScriptPowerModeGuid not found in registry" | Write-Log -Type Error
@@ -455,9 +455,9 @@ else {
     if (Test-Config -PreScriptValue "PreScriptSleepTimeOutOnACInMinutes") {
         "Revert back to previous Sleep Timeout on AC Value" | Write-Log -Type Warning
         $PreScriptSleepTimeOutOnACInMinutes = Get-Config -PreScriptValue "PreScriptSleepTimeOutOnACInMinutes"
-        "  PreScript Sleep Timeout on AC in (min) was: {0}" -f $PreScriptSleepTimeOutOnACInMinutes | Write-Log
+        "  PreScript Sleep Timeout (min)    : {0}" -f $PreScriptSleepTimeOutOnACInMinutes | Write-Log
         Set-SleepTimeOutOnAC -TimeOutInMinutes $PreScriptSleepTimeOutOnACInMinutes
-        "  Set Sleep Timeout on AC back to {0} (min)" -f $PreScriptSleepTimeOutOnACInMinutes | Write-Log -Type Warning 
+        "  Revert Sleep Timeout (min)       : {0}" -f $PreScriptSleepTimeOutOnACInMinutes | Write-Log -Type Warning 
     }
     else {
         "  PreScriptSleepTimeOutOnACInMinutes not found in registry" | Write-Log -Type Error

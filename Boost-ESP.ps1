@@ -390,6 +390,7 @@ Function Test-InESP {
 "Device ESP completed (unreliable)  : {0}" -f (Test-ESPCompleted).ToString() | Write-Log
 "In ESP                             : {0}" -f (Test-InESP).ToString() | Write-Log -Type Warning
 "List Logged On Users               : {0}" -f (Get-Loggedonuser | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
+"List running processes             : {0}" -f (Get-Process -IncludeUserName | Select-Object -Property  ProcessName, PriorityClass, UserName | ConvertTo-Json -EnumsAsStrings) | Write-Log -ConsoleOutput:$false
 
 
 If ((Test-InESP)) {

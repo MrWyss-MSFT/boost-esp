@@ -445,6 +445,8 @@ else {
         "  PreScript PowerMode Name was: {0}, Guid was: {1}" -f $(Get-PowerModeByGuid -Guid $PreScriptPowerModeGuid), $PreScriptPowerModeGuid | Write-Log
         Set-PowerMode -Guid $PreScriptPowerModeGuid
         "  Set PowerMode back to {0}" -f (Get-PowerModeByGuid -Guid $PreScriptPowerModeGuid) | Write-Log -Type Warning
+    } else {
+        "  PreScriptPowerModeGuid not found in registry" | Write-Log -Type Error
     }
     #endregion
 
@@ -455,6 +457,8 @@ else {
         "  PreScript Sleep Timeout on AC in Minutes was: {0}" -f $PreScriptSleepTimeOutOnACInMinutes | Write-Log
         Set-SleepTimeOutOnAC -TimeOutInMinutes $PreScriptSleepTimeOutOnACInMinutes
         "  Set Sleep Timeout on AC back to {0} Mintues" -f $PreScriptSleepTimeOutOnACInMinutes | Write-Log -Type Warning 
+    } else {
+        "  PreScriptSleepTimeOutOnACInMinutes not found in registry" | Write-Log -Type Error
     }
     #endregion
 }

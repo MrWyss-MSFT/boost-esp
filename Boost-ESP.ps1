@@ -398,12 +398,12 @@ $CurrentSleepOnAC = Get-SleepTimeOutOnAC -SchemeGuid $CurrentPowerScheme.Guid
 "List Logged On Users               : {0}" -f (Get-Loggedonuser | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "List running processes             : {0}" -f (Get-Process -IncludeUserName | Select-Object -Property  ProcessName, PriorityClass, UserName | ConvertTo-Json -EnumsAsStrings) | Write-Log -ConsoleOutput:$false
 
-If ((Test-InESP)) {
+If (!(Test-InESP)) {
     "Set Mode" | Write-log -Type Warning
     
     #region Set Power Mode
-    "Desired PowerMode                  : {0}, Guid: {1}" -F (Get-PowerModeByGuid -Guid $DesiredModeGuid), $DesiredModeGuid | Write-Log
     "Current PowerMode Name             : {0}, Guid: {1}" -f $CurrentPowerMode.Name, $CurrentPowerMode.Value | Write-Log
+    "Desired PowerMode                  : {0}, Guid: {1}" -f (Get-PowerModeByGuid -Guid $DesiredModeGuid), $DesiredModeGuid | Write-Log
     if ($CurrentPowerMode.Value -ne $DesiredModeGuid) {
         Set-PowerMode -Guid $DesiredModeGuid
         "  Set PowerMode to {0}" -f (Get-PowerModeByGuid -Guid $DesiredModeGuid) | Write-Log -Type Warning
@@ -414,8 +414,8 @@ If ((Test-InESP)) {
     #endregion
 
     #region Set Sleep
-    "Desired Sleep Timeout on AC (min)  : {0}" -f $DesiredSleepTimeoutOnACInMinutes | Write-Log
     "Current Sleep Timeout on AC (min)  : {0}" -f $CurrentSleepOnAC.Minutes | Write-Log 
+    "Desired Sleep Timeout on AC (min)  : {0}" -f $DesiredSleepTimeoutOnACInMinutes | Write-Log
     if ($CurrentSleepOnAC.Minutes -ne $DesiredSleepTimeoutOnACInMinutes) {
         Set-SleepTimeOutOnAC -TimeOutInMinutes $DesiredSleepTimeoutOnACInMinutes
         "  Set Sleep Timeout on AC to {0} (min)" -f $DesiredSleepTimeoutOnACInMinutes | Write-Log -Type Warning

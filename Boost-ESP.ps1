@@ -398,7 +398,7 @@ $CurrentSleepOnAC = Get-SleepTimeOutOnAC -SchemeGuid $CurrentPowerScheme.Guid
 "List Logged On Users               : {0}" -f (Get-Loggedonuser | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "List running processes             : {0}" -f (Get-Process -IncludeUserName | Select-Object -Property  ProcessName, PriorityClass, UserName | ConvertTo-Json -EnumsAsStrings) | Write-Log -ConsoleOutput:$false
 
-If (!(Test-InESP)) {
+If ((Test-InESP)) {
     "Set Mode" | Write-log -Type Warning
     
     #region Set Power Mode

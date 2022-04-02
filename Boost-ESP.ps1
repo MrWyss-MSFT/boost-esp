@@ -381,7 +381,7 @@ Function Test-InESP {
 
 #region logic
 "----------------------------------------------------- Start Boost-ESP -----------------------------------------------------" | Write-Log
-"LogFile Location                   : {0}" -f $PSDefaultParameterValues.'Write-Log:Path' | Write-Log
+"LogFile Location  (use OneTrace)   : {0}" -f $PSDefaultParameterValues.'Write-Log:Path' | Write-Log
 "RegPath Location                   : {0}" -f $PSDefaultParameterValues.'*-Config:RegPath' | Write-Log
 "Time Zone                          : {0}" -f (Get-TimeZone | select-object DisplayName).DisplayName | Write-Log
 "Last Bootup Time                   : {0}" -f (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime | Write-Log

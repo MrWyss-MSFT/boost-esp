@@ -194,7 +194,7 @@ Function Test-ESPCompleted {
         $RegPath = "HKLM:\SOFTWARE\Microsoft\Windows\Autopilot\EnrollmentStatusTracking\{0}\Setup" -f $UserSID
         try {
             $val = Get-ItemPropertyValue -Path $RegPath -Name HasProvisioningCompleted -ErrorAction Stop 
-            $val = '0x{0:x}‘ -f $val
+            $val = "0x{0:x}" -f $val
             [bool][int32]$val
         }
         catch {
@@ -205,7 +205,7 @@ Function Test-ESPCompleted {
         $RegPath = "HKLM:\SOFTWARE\Microsoft\Windows\Autopilot\EnrollmentStatusTracking\Device\Setup"
         try {
             $val = Get-ItemPropertyValue -Path $RegPath -Name HasProvisioningCompleted -ErrorAction Stop
-            $val = '0x{0:x}‘ -f $val
+            $val = "0x{0:x}" -f $val
             [bool][int32]$val
         }
         catch {

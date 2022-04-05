@@ -455,7 +455,7 @@ $DeviceSetup = Get-ESPProgress -Phase DeviceSetup
 $AccountSetup = Get-ESPProgress -Phase AccountSetup
 $CurrentEnrollmentId = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Provisioning\OMADM\Logger" -Name "CurrentEnrollmentId" -ErrorAction SilentlyContinue).CurrentEnrollmentId
 [bool][int32]$SkipUserStatusPage =  "0x{0:x}" -f ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Enrollments\$CurrentEnrollmentId\FirstSync" -Name "SkipUserStatusPage" -ErrorAction SilentlyContinue).SkipUserStatusPage)
-[bool][int32]$SkipDeviceStatusPage =  "0x{0:x}" -f ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Enrollments\$CurrentEnrollmentId\FirstSync" -Name "SkipDeviceStatusPage" -ErrorAction SilentlyContinue).SkipUserStatusPage)
+[bool][int32]$SkipDeviceStatusPage =  "0x{0:x}" -f ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Enrollments\$CurrentEnrollmentId\FirstSync" -Name "SkipDeviceStatusPage" -ErrorAction SilentlyContinue).SkipDeviceStatusPage)
 #$InESP = Test-InESP
 $InESP = Test-InESPV2 -DevicePreparationDetails $DevicePreparation -DeviceSetupDetails $DeviceSetup -AccountSetupDetails $AccountSetup -SkipUserStatusPage $SkipUserStatusPage -SkipDeviceStatusPage $SkipDeviceStatusPage
 

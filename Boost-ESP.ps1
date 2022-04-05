@@ -152,9 +152,15 @@ Function Get-SleepTimeOutOnAC {
         [guid]
         $SchemeGuid
     )
-
-    $TimeSpan = New-TimeSpan -Seconds (powercfg /q $SchemeGuid 238c9fa8-0aad-41ed-83f4-97be242c8f20 29f6c1db-86da-48c5-9fdb-f2b67b1f44da | Select-String -Pattern "Current AC Power Setting Index:").ToString().Split(":")[1]
-    return $TimeSpan
+    
+    try {
+        $TimeSpan = New-TimeSpan -Seconds (powercfg /q $SchemeGuid 238c9fa8-0aad-41ed-83f4-97be242c8f20 29f6c1db-86da-48c5-9fdb-f2b67b1f44da | Select-String -Pattern "Current AC Power Setting Index:").ToString().Split(":")[1] 
+        return $TimeSpan
+    }
+    catch {
+        return $null
+    }    
+    
 }
 function Set-SleepTimeOutOnAC {
     <#
@@ -351,25 +357,32 @@ Function Test-InESP {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, HelpMessage = 'DevicePreparationDetails PSCustomObject')]
+        [AllowNull()] 
         [PSCustomObject]
         $DevicePreparationDetails,
         [Parameter(Mandatory, HelpMessage = 'DeviceSetupDetails PSCustomObject')]
+        [AllowNull()] 
         [PSCustomObject]
         $DeviceSetupDetails,
         [Parameter(Mandatory, HelpMessage = 'AccountSetupDetails PSCustomObject')]
+        [AllowNull()] 
         [PSCustomObject]
-        $AccountSetupDetails,
+        $AccountSetupDetails = $false,
         [Parameter(Mandatory, HelpMessage = 'SkipUserStatusPage boolean')]
         [bool]
-        $SkipUserStatusPage,
+        $SkipUserStatusPage = $false,
         [Parameter(Mandatory, HelpMessage = 'SkipDeviceStatusPage boolean')]
         [bool]
         $SkipDeviceStatusPage
     )
+
     $DevicePrepComplete = $false
     $DeviceSetupCompleteOrSkipped = $false
     $AccountSetupCompleteOrSkipped = $false
 
+    if (($DevicePreparationDetails -eq $null) -or ($AccountSetupDetails -eq $null) -or ($AccountSetupDetails -eq $null)) {
+        return $false
+    }
 
     if (($DevicePreparationDetails.categorySucceeded -eq 'True') -or ($DevicePreparationDetails.categoryState -eq 'succeeded')) {
         $DevicePrepComplete = $true
@@ -410,6 +423,32 @@ Function Get-ESPProgress () {
         $val = $null
     }
 }
+Function Get-SkipStatusPage () {
+    <#
+    .SYNOPSIS
+    Reads the ESP Phase status from Registry, returns PSCustomObject
+    #>
+    [CmdletBinding(DefaultParameterSetName = 'user')]
+    param (
+        [Parameter(Mandatory, ParameterSetName = 'user', HelpMessage = 'SkipUserStatusPage')]
+        [Switch]
+        $User,
+        [Parameter(Mandatory, ParameterSetName = 'device', HelpMessage = 'SkipDeviceStatusPage')]
+        [Switch]
+        $Device
+    )
+    
+    try {
+        $CurrentEnrollmentId = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Provisioning\OMADM\Logger" -Name "CurrentEnrollmentId" -ErrorAction SilentlyContinue).CurrentEnrollmentId
+        $path = "HKLM:\SOFTWARE\Microsoft\Enrollments\{0}\FirstSync" -f $CurrentEnrollmentId
+        $key = "Skip{0}StatusPage" -f $($PSCmdlet.ParameterSetName)
+        [bool][int32]$ret = "0x{0:x}" -f ((Get-ItemProperty -Path $path -Name $key -ErrorAction SilentlyContinue)."$key")
+        return $ret
+    }
+    catch {
+        return $false
+    }
+}
 #endregion
 
 #region logic
@@ -419,9 +458,8 @@ $CurrentSleepOnAC = Get-SleepTimeOutOnAC -SchemeGuid $CurrentPowerScheme.Guid
 $DevicePreparation = Get-ESPProgress -Phase DevicePreparation
 $DeviceSetup = Get-ESPProgress -Phase DeviceSetup
 $AccountSetup = Get-ESPProgress -Phase AccountSetup
-$CurrentEnrollmentId = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Provisioning\OMADM\Logger" -Name "CurrentEnrollmentId" -ErrorAction SilentlyContinue).CurrentEnrollmentId
-[bool][int32]$SkipUserStatusPage = "0x{0:x}" -f ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Enrollments\$CurrentEnrollmentId\FirstSync" -Name "SkipUserStatusPage" -ErrorAction SilentlyContinue).SkipUserStatusPage)
-[bool][int32]$SkipDeviceStatusPage = "0x{0:x}" -f ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Enrollments\$CurrentEnrollmentId\FirstSync" -Name "SkipDeviceStatusPage" -ErrorAction SilentlyContinue).SkipDeviceStatusPage)
+$SkipUserStatusPage = Get-SkipStatusPage -User
+$SkipDeviceStatusPage = Get-SkipStatusPage -Device
 $InESP = Test-InESP -DevicePreparationDetails $DevicePreparation -DeviceSetupDetails $DeviceSetup -AccountSetupDetails $AccountSetup -SkipUserStatusPage $SkipUserStatusPage -SkipDeviceStatusPage $SkipDeviceStatusPage
 
 

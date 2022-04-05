@@ -66,7 +66,7 @@ Registry Path as to where it saves the original power settings values.
 
 ## Logging
 If not changed the default log location is **C:\ProgramData\Microsoft\IntuneManagementExtension\Logs\Boost-Esp-yyyy-M-dd.log**. 
-
+![Log](doc/pictures/log.png)
 Few tips:
 
 - The log file is best viewed with **OneTrace** as it uses a monospaces font.

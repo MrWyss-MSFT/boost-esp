@@ -375,6 +375,52 @@ Function Test-InESP {
     }
     return $InESP
 }
+Function Test-InESPV2 {
+    <#
+    .SYNOPSIS
+    Checks if device is in the enrollment status page (ESP) Version 2
+    heavily based on: https://www.reddit.com/r/Intune/comments/q8v92z/make_a_powershell_script_determine_if_it_is/
+    #>
+    [CmdletBinding()]
+    param (
+        [Parameter(Mandatory, HelpMessage = 'DevicePreparationDetails PSCustomObject')]
+        [PSCustomObject]
+        $DevicePreparationDetails,
+        [Parameter(Mandatory, HelpMessage = 'DeviceSetupDetails PSCustomObject')]
+        [PSCustomObject]
+        $DeviceSetupDetails,
+        [Parameter(Mandatory, HelpMessage = 'AccountSetupDetails PSCustomObject')]
+        [PSCustomObject]
+        $AccountSetupDetails,
+        [Parameter(Mandatory, HelpMessage = 'SkipUserStatusPage boolean')]
+        [bool]
+        $SkipUserStatusPage,
+        [Parameter(Mandatory, HelpMessage = 'SkipDeviceStatusPage boolean')]
+        [bool]
+        $SkipDeviceStatusPage
+    )
+    $DevicePrepCompleteOrSkipped = $false
+    $DeviceSetupCompleteOrSkipped = $false
+    $AccountSetupCompleteOrSkipped = $false
+
+
+    if (($DevicePreparationDetails.categorySucceeded -eq 'True') -or ($DevicePreparationDetails.categoryState -eq 'succeeded') -or $SkipDeviceStatusPage) {
+        $DevicePrepCompleteOrSkipped = $true
+    }
+    if (($DeviceSetupDetails.categorySucceeded -eq 'True') -or ($DeviceSetupDetails.categoryState -eq 'succeeded') -or $SkipDeviceStatusPage) {
+        $DeviceSetupCompleteOrSkipped = $true
+    }
+    if (($AccountSetupDetails.categorySucceeded -eq 'True') -or ($AccountSetupDetails.categoryState -eq 'succeeded') -or $SkipUserStatusPage) {
+        $AccountSetupCompleteOrSkipped = $true
+    }
+    
+    if ($DevicePrepCompleteOrSkipped -and $DeviceSetupCompleteOrSkipped  -and $AccountSetupCompleteOrSkipped) {
+        return $false
+    }
+    else {
+        return $true
+    }
+}
 Function Get-ESPProgress () {
     <#
     .SYNOPSIS
@@ -407,6 +453,12 @@ $CurrentSleepOnAC = Get-SleepTimeOutOnAC -SchemeGuid $CurrentPowerScheme.Guid
 $DevicePreparation = Get-ESPProgress -Phase DevicePreparation
 $DeviceSetup = Get-ESPProgress -Phase DeviceSetup
 $AccountSetup = Get-ESPProgress -Phase AccountSetup
+$CurrentEnrollmentId = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Provisioning\OMADM\Logger" -Name "CurrentEnrollmentId" -ErrorAction SilentlyContinue).CurrentEnrollmentId
+[bool][int32]$SkipUserStatusPage =  "0x{0:x}" -f ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Enrollments\$CurrentEnrollmentId\FirstSync" -Name "SkipUserStatusPage" -ErrorAction SilentlyContinue).SkipUserStatusPage)
+[bool][int32]$SkipDeviceStatusPage =  "0x{0:x}" -f ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Enrollments\$CurrentEnrollmentId\FirstSync" -Name "SkipDeviceStatusPage" -ErrorAction SilentlyContinue).SkipUserStatusPage)
+#$InESP = Test-InESP
+$InESP = Test-InESPV2 -DevicePreparationDetails $DevicePreparation -DeviceSetupDetails $DeviceSetup -AccountSetupDetails $AccountSetup -SkipUserStatusPage $SkipUserStatusPage -SkipDeviceStatusPage $SkipDeviceStatusPage
+
 
 "----------------------------------------------------- Start Boost-ESP -----------------------------------------------------" | Write-Log
 "LogFile Location  (use OneTrace)   : {0}" -f $PSDefaultParameterValues.'Write-Log:Path' | Write-Log
@@ -418,19 +470,21 @@ $AccountSetup = Get-ESPProgress -Phase AccountSetup
 "Current Power Mode Name            : {0}" -f ($CurrentPowerMode.Name) | Write-Log
 "Current Power Mode Guid            : {0}" -f ($CurrentPowerMode.Value) | Write-Log
 "Current Sleep on AC Value (min)    : {0}" -f ($CurrentSleepOnAC.Minutes) | Write-Log
+"SkipUserStatusPage                 : {0}" -f ($SkipUserStatusPage) | Write-Log
+"SkipDeviceStatusPage               : {0}" -f ($SkipDeviceStatusPage) | Write-Log
 "Device ESP completed (unreliable)  : {0}" -f (Test-ESPCompleted).ToString() | Write-Log
 "User ESP completed (unreliable)    : {0}" -f (Test-ESPCompleted -UserSID (Get-LoggedOnUserSID)).ToString() | Write-Log
 "DevicePreparation ESP Phase status : {0}" -f ($DevicePreparation.categoryState) | Write-Log
 "DeviceSetup ESP Phase status       : {0}" -f ($DeviceSetup.categoryState) | Write-Log
 "AccountSetup ESP Phase status      : {0}" -f ($AccountSetup.categoryState) | Write-Log
-"In ESP                             : {0}" -f (Test-InESP).ToString() | Write-Log -Type Warning
+"In ESP                             : {0}" -f $InESP | Write-Log -Type Warning
 "List Logged On Users               : {0}" -f (Get-Loggedonuser | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "List running processes             : {0}" -f (Get-Process -IncludeUserName | Select-Object -Property  ProcessName, PriorityClass, UserName | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "DevicePreparation full status      : {0}" -f ($DevicePreparation | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "DeviceSetup full status            : {0}" -f ($DeviceSetup | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "AccountSetup full status           : {0}" -f ($AccountSetup | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 
-If ((Test-InESP)) {
+If ($InESP) {
     "Set Mode" | Write-log -Type Warning
     
     #region Set Power Mode

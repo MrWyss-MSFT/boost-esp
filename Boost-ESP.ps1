@@ -154,7 +154,7 @@ Function Get-SleepTimeOutOnAC {
     )
     
     try {
-        $TimeSpan = New-TimeSpan -Seconds (powercfg /q $SchemeGuid 238c9fa8-0aad-41ed-83f4-97be242c8f20 29f6c1db-86da-48c5-9fdb-f2b67b1f44da |  select -Last 3 | select -First 1).ToString().Split(":")[1]
+        $TimeSpan = New-TimeSpan -Seconds (powercfg /q $SchemeGuid 238c9fa8-0aad-41ed-83f4-97be242c8f20 29f6c1db-86da-48c5-9fdb-f2b67b1f44da |  Select-Object -Last 3 | Select-Object -First 1).ToString().Split(":")[1]
         return $TimeSpan
     }
     catch {
@@ -360,20 +360,24 @@ Function Test-InESP {
         [AllowNull()] 
         [PSCustomObject]
         $DevicePreparationDetails,
+
         [Parameter(Mandatory, HelpMessage = 'DeviceSetupDetails PSCustomObject')]
         [AllowNull()] 
         [PSCustomObject]
         $DeviceSetupDetails,
+
         [Parameter(Mandatory, HelpMessage = 'AccountSetupDetails PSCustomObject')]
         [AllowNull()] 
         [PSCustomObject]
-        $AccountSetupDetails = $false,
-        [Parameter(Mandatory, HelpMessage = 'SkipUserStatusPage boolean')]
+        $AccountSetupDetails,
+
+        [Parameter(HelpMessage = 'SkipUserStatusPage boolean')]
         [bool]
         $SkipUserStatusPage = $false,
-        [Parameter(Mandatory, HelpMessage = 'SkipDeviceStatusPage boolean')]
+
+        [Parameter(HelpMessage = 'SkipDeviceStatusPage boolean')]
         [bool]
-        $SkipDeviceStatusPage
+        $SkipDeviceStatusPage = $false
     )
 
     $DevicePrepComplete = $false

@@ -1,4 +1,4 @@
-# boost-esp
+# Boost ESP
 This is a **proof of concept**, if setting Best_performance mode and disabling sleep during the Enrollment Status Page (ESP) decreases the deploy time and avoids the devices going into sleep mode.
 
 
@@ -64,12 +64,27 @@ $PSDefaultParameterValues = @{
 You might have different mode guids for different oem devices. I am not sure about this yet.
 Registry Path as to where it saves the original power settings values.
 
-The log file is best viewed with **OneTrace** as it uses a monospaces font.
+## Logging
+If not changed the default log location is **C:\ProgramData\Microsoft\IntuneManagementExtension\Logs\Boost-Esp-yyyy-M-dd.log**. 
 
+Few tips:
+
+- The log file is best viewed with **OneTrace** as it uses a monospaces font.
+- Some lines contain json, copy the Json part to a file or a here-string and use **ConvertFrom-Json** to have it human readable
+- The log can be collected with the Intune's **Collect diagnostics** built-in feature 
+
+## Notes
+- Interestingly, If you **wipe** a device from Intune, the **power mode is preserved**. So make sure it's set to your desired start value before you wipe.
+- Reboots during the device phase causes another user cred prompt. Make sure none of your apps or configs do so.
+  - for the configs check Computer\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Provisioning\SyncML\RebootRequiredURIs
+- The report **Autopilot deployment (preview)** under Devices Monitor, shows the deployment start, end and total time. 
+  - The start time is when your user authenticate on the first autopilot logon prompt. 
+  - The end time is when the desktop is show or at the windows hello enrollment prompt.
 ## ToDo
 - [x] Better ESP completion test, this is currently hit and miss
 - [ ] Win11 test and screenshot
 - [ ] Test with SkipUserStatusPage
+- [ ] make sure that the scheduled task is run again without reboot once the desktop is loaded
 
 ## Contribution
 please do

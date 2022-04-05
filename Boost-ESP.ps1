@@ -152,9 +152,14 @@ Function Get-SleepTimeOutOnAC {
         [guid]
         $SchemeGuid
     )
-
-    $TimeSpan = New-TimeSpan -Seconds (powercfg /q $SchemeGuid 238c9fa8-0aad-41ed-83f4-97be242c8f20 29f6c1db-86da-48c5-9fdb-f2b67b1f44da | Select-String -Pattern "Current AC Power Setting Index:").ToString().Split(":")[1]
-    return $TimeSpan
+    
+    try {
+        $TimeSpan = New-TimeSpan -Seconds (powercfg /q $SchemeGuid 238c9fa8-0aad-41ed-83f4-97be242c8f20 29f6c1db-86da-48c5-9fdb-f2b67b1f44da |  Select-Object -Last 3 | Select-Object -First 1).ToString().Split(":")[1]
+        return $TimeSpan
+    }
+    catch {
+        return $null
+    }
 }
 function Set-SleepTimeOutOnAC {
     <#
@@ -320,7 +325,6 @@ Function Get-Loggedonuser {
         $loggedonuser | Add-Member -MemberType NoteProperty -Name "StartTime" -Value $starttime
         $loggedonuser
     }
-    
 }
 Function Get-LoggedOnUserSID {
     <#
@@ -351,25 +355,36 @@ Function Test-InESP {
     [CmdletBinding()]
     param (
         [Parameter(Mandatory, HelpMessage = 'DevicePreparationDetails PSCustomObject')]
+        [AllowNull()] 
         [PSCustomObject]
         $DevicePreparationDetails,
+
         [Parameter(Mandatory, HelpMessage = 'DeviceSetupDetails PSCustomObject')]
+        [AllowNull()] 
         [PSCustomObject]
         $DeviceSetupDetails,
+
         [Parameter(Mandatory, HelpMessage = 'AccountSetupDetails PSCustomObject')]
+        [AllowNull()] 
         [PSCustomObject]
         $AccountSetupDetails,
-        [Parameter(Mandatory, HelpMessage = 'SkipUserStatusPage boolean')]
+
+        [Parameter(HelpMessage = 'SkipUserStatusPage boolean')]
         [bool]
-        $SkipUserStatusPage,
-        [Parameter(Mandatory, HelpMessage = 'SkipDeviceStatusPage boolean')]
+        $SkipUserStatusPage = $false,
+
+        [Parameter(HelpMessage = 'SkipDeviceStatusPage boolean')]
         [bool]
-        $SkipDeviceStatusPage
+        $SkipDeviceStatusPage = $false
     )
+
     $DevicePrepComplete = $false
     $DeviceSetupCompleteOrSkipped = $false
     $AccountSetupCompleteOrSkipped = $false
 
+    if (($DevicePreparationDetails -eq $null) -or ($AccountSetupDetails -eq $null) -or ($AccountSetupDetails -eq $null)) {
+        return $false
+    }
 
     if (($DevicePreparationDetails.categorySucceeded -eq 'True') -or ($DevicePreparationDetails.categoryState -eq 'succeeded')) {
         $DevicePrepComplete = $true
@@ -410,27 +425,55 @@ Function Get-ESPProgress () {
         $val = $null
     }
 }
+Function Get-SkipStatusPage () {
+    <#
+    .SYNOPSIS
+    Reads the ESP Phase status from Registry, returns PSCustomObject
+    #>
+    [CmdletBinding(DefaultParameterSetName = 'user')]
+    param (
+        [Parameter(Mandatory, ParameterSetName = 'user', HelpMessage = 'SkipUserStatusPage')]
+        [Switch]
+        $User,
+        [Parameter(Mandatory, ParameterSetName = 'device', HelpMessage = 'SkipDeviceStatusPage')]
+        [Switch]
+        $Device
+    )
+    
+    try {
+        $CurrentEnrollmentId = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Provisioning\OMADM\Logger" -Name "CurrentEnrollmentId" -ErrorAction SilentlyContinue).CurrentEnrollmentId
+        $path = "HKLM:\SOFTWARE\Microsoft\Enrollments\{0}\FirstSync" -f $CurrentEnrollmentId
+        $key = "Skip{0}StatusPage" -f $($PSCmdlet.ParameterSetName)
+        [bool][int32]$ret = "0x{0:x}" -f ((Get-ItemProperty -Path $path -Name $key -ErrorAction SilentlyContinue)."$key")
+        return $ret
+    }
+    catch {
+        return $false
+    }
+}
 #endregion
 
 #region logic
+$TimeZone = (Get-TimeZone | select-object DisplayName).DisplayName 
+$LastBootupTime = (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime
+$OnBattery = (Get-CimInstance -Namespace root/WMI -ClassName BatteryStatus -ErrorAction SilentlyContinue).PowerOnline
 $CurrentPowerScheme = Get-CurrentPowerScheme
 $CurrentPowerMode = Get-PowerMode
 $CurrentSleepOnAC = Get-SleepTimeOutOnAC -SchemeGuid $CurrentPowerScheme.Guid
 $DevicePreparation = Get-ESPProgress -Phase DevicePreparation
 $DeviceSetup = Get-ESPProgress -Phase DeviceSetup
 $AccountSetup = Get-ESPProgress -Phase AccountSetup
-$CurrentEnrollmentId = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Provisioning\OMADM\Logger" -Name "CurrentEnrollmentId" -ErrorAction SilentlyContinue).CurrentEnrollmentId
-[bool][int32]$SkipUserStatusPage = "0x{0:x}" -f ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Enrollments\$CurrentEnrollmentId\FirstSync" -Name "SkipUserStatusPage" -ErrorAction SilentlyContinue).SkipUserStatusPage)
-[bool][int32]$SkipDeviceStatusPage = "0x{0:x}" -f ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Enrollments\$CurrentEnrollmentId\FirstSync" -Name "SkipDeviceStatusPage" -ErrorAction SilentlyContinue).SkipDeviceStatusPage)
+$SkipUserStatusPage = Get-SkipStatusPage -User
+$SkipDeviceStatusPage = Get-SkipStatusPage -Device
 $InESP = Test-InESP -DevicePreparationDetails $DevicePreparation -DeviceSetupDetails $DeviceSetup -AccountSetupDetails $AccountSetup -SkipUserStatusPage $SkipUserStatusPage -SkipDeviceStatusPage $SkipDeviceStatusPage
 
 
 "----------------------------------------------------- Start Boost-ESP -----------------------------------------------------" | Write-Log
-"LogFile location  (use OneTrace)   : {0}" -f $PSDefaultParameterValues.'Write-Log:Path' | Write-Log
-"RegPath location                   : {0}" -f $PSDefaultParameterValues.'*-Config:RegPath' | Write-Log
-"Time Zone                          : {0}" -f (Get-TimeZone | select-object DisplayName).DisplayName | Write-Log
-"Last Bootup Time                   : {0}" -f (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime | Write-Log
-"Device on AC (null = no battery)   : {0}" -f (Get-CimInstance -Namespace root/WMI -ClassName BatteryStatus -ErrorAction SilentlyContinue).PowerOnline | Write-Log
+"LogFile location  (use OneTrace)   : {0}" -f ($PSDefaultParameterValues.'Write-Log:Path') | Write-Log
+"RegPath location                   : {0}" -f ($PSDefaultParameterValues.'*-Config:RegPath') | Write-Log
+"Time Zone                          : {0}" -f ($TimeZone) | Write-Log
+"Last Bootup Time                   : {0}" -f ($LastBootupTime) | Write-Log
+"Device on AC (null = no battery)   : {0}" -f ($OnBattery) | Write-Log
 "Current Power Scheme Name          : {0}" -f ($CurrentPowerScheme.Name) | Write-Log
 "Current Power Mode Name            : {0}" -f ($CurrentPowerMode.Name) | Write-Log
 "Current Power Mode Guid            : {0}" -f ($CurrentPowerMode.Value) | Write-Log
@@ -440,11 +483,10 @@ $InESP = Test-InESP -DevicePreparationDetails $DevicePreparation -DeviceSetupDet
 "DevicePreparation ESP phase status : {0}" -f ($DevicePreparation.categoryState) | Write-Log
 "DeviceSetup ESP phase status       : {0}" -f ($DeviceSetup.categoryState) | Write-Log
 "AccountSetup ESP phase status      : {0}" -f ($AccountSetup.categoryState) | Write-Log
-"In ESP                             : {0}" -f ($InESP) | Write-Log -Type Warning
 "DevicePreparation full status      : {0}" -f ($DevicePreparation | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "DeviceSetup full status            : {0}" -f ($DeviceSetup | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "AccountSetup full status           : {0}" -f ($AccountSetup | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
-
+"In ESP                             : {0}" -f ($InESP) | Write-Log -Type Warning
 if ($Debug) {
     "List logged on users               : {0}" -f (Get-Loggedonuser | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
     "List running processes             : {0}" -f (Get-Process -IncludeUserName | Select-Object -Property ProcessName, PriorityClass, UserName | ConvertTo-Json) | Write-Log -ConsoleOutput:$false

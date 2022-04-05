@@ -159,8 +159,7 @@ Function Get-SleepTimeOutOnAC {
     }
     catch {
         return $null
-    }    
-    
+    }
 }
 function Set-SleepTimeOutOnAC {
     <#
@@ -326,7 +325,6 @@ Function Get-Loggedonuser {
         $loggedonuser | Add-Member -MemberType NoteProperty -Name "StartTime" -Value $starttime
         $loggedonuser
     }
-    
 }
 Function Get-LoggedOnUserSID {
     <#

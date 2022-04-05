@@ -96,10 +96,8 @@ Function Write-Log {
         "thread=`"$([Threading.Thread]::CurrentThread.ManagedThreadId)`" " + `
         "file=`"`">"
 
-    # Fix file already in access
-    Start-Sleep -Milliseconds 50
     # Write the line to the log file
-    Add-Content -Path $Path -Value $Content
+    $Content | Out-File -FilePath $Path -Append
 }
 Function Get-PowerMode {
     <#

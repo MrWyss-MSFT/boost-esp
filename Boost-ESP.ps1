@@ -154,7 +154,7 @@ Function Get-SleepTimeOutOnAC {
     )
     
     try {
-        $TimeSpan = New-TimeSpan -Seconds (powercfg /q $SchemeGuid 238c9fa8-0aad-41ed-83f4-97be242c8f20 29f6c1db-86da-48c5-9fdb-f2b67b1f44da | Select-String -Pattern "Current AC Power Setting Index:").ToString().Split(":")[1] 
+        $TimeSpan = New-TimeSpan -Seconds (powercfg /q $SchemeGuid 238c9fa8-0aad-41ed-83f4-97be242c8f20 29f6c1db-86da-48c5-9fdb-f2b67b1f44da |  select -Last 3 | select -First 1).ToString().Split(":")[1]
         return $TimeSpan
     }
     catch {
@@ -452,6 +452,9 @@ Function Get-SkipStatusPage () {
 #endregion
 
 #region logic
+$TimeZone = (Get-TimeZone | select-object DisplayName).DisplayName 
+$LastBootupTime = (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime
+$OnBattery = (Get-CimInstance -Namespace root/WMI -ClassName BatteryStatus -ErrorAction SilentlyContinue).PowerOnline
 $CurrentPowerScheme = Get-CurrentPowerScheme
 $CurrentPowerMode = Get-PowerMode
 $CurrentSleepOnAC = Get-SleepTimeOutOnAC -SchemeGuid $CurrentPowerScheme.Guid
@@ -464,11 +467,11 @@ $InESP = Test-InESP -DevicePreparationDetails $DevicePreparation -DeviceSetupDet
 
 
 "----------------------------------------------------- Start Boost-ESP -----------------------------------------------------" | Write-Log
-"LogFile location  (use OneTrace)   : {0}" -f $PSDefaultParameterValues.'Write-Log:Path' | Write-Log
-"RegPath location                   : {0}" -f $PSDefaultParameterValues.'*-Config:RegPath' | Write-Log
-"Time Zone                          : {0}" -f (Get-TimeZone | select-object DisplayName).DisplayName | Write-Log
-"Last Bootup Time                   : {0}" -f (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime | Write-Log
-"Device on AC (null = no battery)   : {0}" -f (Get-CimInstance -Namespace root/WMI -ClassName BatteryStatus -ErrorAction SilentlyContinue).PowerOnline | Write-Log
+"LogFile location  (use OneTrace)   : {0}" -f ($PSDefaultParameterValues.'Write-Log:Path') | Write-Log
+"RegPath location                   : {0}" -f ($PSDefaultParameterValues.'*-Config:RegPath') | Write-Log
+"Time Zone                          : {0}" -f ($TimeZone) | Write-Log
+"Last Bootup Time                   : {0}" -f ($LastBootupTime) | Write-Log
+"Device on AC (null = no battery)   : {0}" -f ($OnBattery) | Write-Log
 "Current Power Scheme Name          : {0}" -f ($CurrentPowerScheme.Name) | Write-Log
 "Current Power Mode Name            : {0}" -f ($CurrentPowerMode.Name) | Write-Log
 "Current Power Mode Guid            : {0}" -f ($CurrentPowerMode.Value) | Write-Log
@@ -478,11 +481,10 @@ $InESP = Test-InESP -DevicePreparationDetails $DevicePreparation -DeviceSetupDet
 "DevicePreparation ESP phase status : {0}" -f ($DevicePreparation.categoryState) | Write-Log
 "DeviceSetup ESP phase status       : {0}" -f ($DeviceSetup.categoryState) | Write-Log
 "AccountSetup ESP phase status      : {0}" -f ($AccountSetup.categoryState) | Write-Log
-"In ESP                             : {0}" -f ($InESP) | Write-Log -Type Warning
 "DevicePreparation full status      : {0}" -f ($DevicePreparation | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "DeviceSetup full status            : {0}" -f ($DeviceSetup | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "AccountSetup full status           : {0}" -f ($AccountSetup | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
-
+"In ESP                             : {0}" -f ($InESP) | Write-Log -Type Warning
 if ($Debug) {
     "List logged on users               : {0}" -f (Get-Loggedonuser | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
     "List running processes             : {0}" -f (Get-Process -IncludeUserName | Select-Object -Property ProcessName, PriorityClass, UserName | ConvertTo-Json) | Write-Log -ConsoleOutput:$false

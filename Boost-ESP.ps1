@@ -399,13 +399,13 @@ Function Test-InESPV2 {
         [bool]
         $SkipDeviceStatusPage
     )
-    $DevicePrepCompleteOrSkipped = $false
+    $DevicePrepComplete = $false
     $DeviceSetupCompleteOrSkipped = $false
     $AccountSetupCompleteOrSkipped = $false
 
 
-    if (($DevicePreparationDetails.categorySucceeded -eq 'True') -or ($DevicePreparationDetails.categoryState -eq 'succeeded') -or $SkipDeviceStatusPage) {
-        $DevicePrepCompleteOrSkipped = $true
+    if (($DevicePreparationDetails.categorySucceeded -eq 'True') -or ($DevicePreparationDetails.categoryState -eq 'succeeded')) {
+        $DevicePrepComplete = $true
     }
     if (($DeviceSetupDetails.categorySucceeded -eq 'True') -or ($DeviceSetupDetails.categoryState -eq 'succeeded') -or $SkipDeviceStatusPage) {
         $DeviceSetupCompleteOrSkipped = $true
@@ -414,7 +414,7 @@ Function Test-InESPV2 {
         $AccountSetupCompleteOrSkipped = $true
     }
     
-    if ($DevicePrepCompleteOrSkipped -and $DeviceSetupCompleteOrSkipped  -and $AccountSetupCompleteOrSkipped) {
+    if ($DevicePrepComplete -and $DeviceSetupCompleteOrSkipped  -and $AccountSetupCompleteOrSkipped) {
         return $false
     }
     else {

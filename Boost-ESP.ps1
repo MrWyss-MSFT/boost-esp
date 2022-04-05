@@ -106,7 +106,7 @@ Function Get-PowerMode {
     $effectiveOverlayGuid = [Guid]::NewGuid()
     $ret = $power::PowerGetEffectiveOverlayScheme([ref]$effectiveOverlayGuid)
     
-    if ($ret -eq 0) {        
+    if ($ret -eq 0) {
         return $($modes.GetEnumerator() | Where-Object { $_.value -eq $effectiveOverlayGuid })
     }
 }
@@ -344,40 +344,6 @@ Function Get-LoggedOnUserSID {
 Function Test-InESP {
     <#
     .SYNOPSIS
-    Checks if device is in the enrollment status page (ESP).
-    ref: https://www.reddit.com/r/Intune/comments/otpgnp/ps_app_deploy_toolkit_esp/
-    #>
-    $ESPCloudHost = @(Get-CimInstance -ClassName 'Win32_Process' -Filter "Name like 'CloudExperienceHostBroker.exe'" -ErrorAction 'SilentlyContinue')
-    $ESPWWAHost = @(Get-CimInstance -ClassName 'Win32_Process' -Filter "Name like 'WWAHost.exe'" -ErrorAction 'SilentlyContinue')
-    $ExplorerProcesses = @(Get-CimInstance -ClassName 'Win32_Process' -Filter "Name like 'explorer.exe'" -ErrorAction 'SilentlyContinue')
-    $ESPCount = 0
-    $ESPCount = $ESPCloudHost.Count + $ESPWWAHost.Count
-    $InESP = $true
-    if ($ExplorerProcesses.Count -eq 0 -Or $ESPCount -ne 0) {
-        if ($ExplorerProcesses.Count -eq 0) {
-            $InESP = $false
-        }
-        elseif ($ESPCount -ne 0) {
-            $InESP = $true
-        }
-    }
-    else {
-        foreach ($TargetProcess in $ExplorerProcesses) {
-            $Username = (Invoke-CimMethod -InputObject $TargetProcess -MethodName GetOwner).User
-        }
-    
-        if ($UserName -ne 'defaultuser0') {
-            $InESP = $false
-        }
-        else {
-            $InESP = $true
-        }
-    }
-    return $InESP
-}
-Function Test-InESPV2 {
-    <#
-    .SYNOPSIS
     Checks if device is in the enrollment status page (ESP) Version 2
     heavily based on: https://www.reddit.com/r/Intune/comments/q8v92z/make_a_powershell_script_determine_if_it_is/
     #>
@@ -453,10 +419,9 @@ $DevicePreparation = Get-ESPProgress -Phase DevicePreparation
 $DeviceSetup = Get-ESPProgress -Phase DeviceSetup
 $AccountSetup = Get-ESPProgress -Phase AccountSetup
 $CurrentEnrollmentId = (Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Provisioning\OMADM\Logger" -Name "CurrentEnrollmentId" -ErrorAction SilentlyContinue).CurrentEnrollmentId
-[bool][int32]$SkipUserStatusPage =  "0x{0:x}" -f ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Enrollments\$CurrentEnrollmentId\FirstSync" -Name "SkipUserStatusPage" -ErrorAction SilentlyContinue).SkipUserStatusPage)
-[bool][int32]$SkipDeviceStatusPage =  "0x{0:x}" -f ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Enrollments\$CurrentEnrollmentId\FirstSync" -Name "SkipDeviceStatusPage" -ErrorAction SilentlyContinue).SkipDeviceStatusPage)
-#$InESP = Test-InESP
-$InESP = Test-InESPV2 -DevicePreparationDetails $DevicePreparation -DeviceSetupDetails $DeviceSetup -AccountSetupDetails $AccountSetup -SkipUserStatusPage $SkipUserStatusPage -SkipDeviceStatusPage $SkipDeviceStatusPage
+[bool][int32]$SkipUserStatusPage = "0x{0:x}" -f ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Enrollments\$CurrentEnrollmentId\FirstSync" -Name "SkipUserStatusPage" -ErrorAction SilentlyContinue).SkipUserStatusPage)
+[bool][int32]$SkipDeviceStatusPage = "0x{0:x}" -f ((Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Enrollments\$CurrentEnrollmentId\FirstSync" -Name "SkipDeviceStatusPage" -ErrorAction SilentlyContinue).SkipDeviceStatusPage)
+$InESP = Test-InESP -DevicePreparationDetails $DevicePreparation -DeviceSetupDetails $DeviceSetup -AccountSetupDetails $AccountSetup -SkipUserStatusPage $SkipUserStatusPage -SkipDeviceStatusPage $SkipDeviceStatusPage
 
 
 "----------------------------------------------------- Start Boost-ESP -----------------------------------------------------" | Write-Log
@@ -478,7 +443,7 @@ $InESP = Test-InESPV2 -DevicePreparationDetails $DevicePreparation -DeviceSetupD
 "AccountSetup ESP Phase status      : {0}" -f ($AccountSetup.categoryState) | Write-Log
 "In ESP                             : {0}" -f ($InESP) | Write-Log -Type Warning
 "List Logged On Users               : {0}" -f (Get-Loggedonuser | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
-"List running processes             : {0}" -f (Get-Process -IncludeUserName | Select-Object -Property  ProcessName, PriorityClass, UserName | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
+"List running processes             : {0}" -f (Get-Process -IncludeUserName | Select-Object -Property ProcessName, PriorityClass, UserName | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "DevicePreparation full status      : {0}" -f ($DevicePreparation | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "DeviceSetup full status            : {0}" -f ($DeviceSetup | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "AccountSetup full status           : {0}" -f ($AccountSetup | ConvertTo-Json) | Write-Log -ConsoleOutput:$false

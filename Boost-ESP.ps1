@@ -432,7 +432,6 @@ Function Get-ESPProgress () {
         [ValidateSet("DevicePreparation", "DeviceSetup", "AccountSetup")]
         [String]
         $Phase
-      
     )
 
     $RegPath = "HKLM:\SOFTWARE\Microsoft\Provisioning\AutopilotSettings"
@@ -477,7 +476,7 @@ $InESP = Test-InESPV2 -DevicePreparationDetails $DevicePreparation -DeviceSetupD
 "DevicePreparation ESP Phase status : {0}" -f ($DevicePreparation.categoryState) | Write-Log
 "DeviceSetup ESP Phase status       : {0}" -f ($DeviceSetup.categoryState) | Write-Log
 "AccountSetup ESP Phase status      : {0}" -f ($AccountSetup.categoryState) | Write-Log
-"In ESP                             : {0}" -f $InESP | Write-Log -Type Warning
+"In ESP                             : {0}" -f ($InESP) | Write-Log -Type Warning
 "List Logged On Users               : {0}" -f (Get-Loggedonuser | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "List running processes             : {0}" -f (Get-Process -IncludeUserName | Select-Object -Property  ProcessName, PriorityClass, UserName | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "DevicePreparation full status      : {0}" -f ($DevicePreparation | ConvertTo-Json) | Write-Log -ConsoleOutput:$false

@@ -18,7 +18,8 @@ $modes = @{
 }
 
 $DesiredModeGuid = $modes.Best_performance.Guid
-$DesiredSleepTimeoutOnACInMinutes = 0 
+$DesiredSleepTimeoutOnACInMinutes = 0
+$Debug = $false
 #$ScriptDirectory = Split-Path $MyInvocation.MyCommand.Path
 
 $PSDefaultParameterValues = @{
@@ -95,6 +96,8 @@ Function Write-Log {
         "thread=`"$([Threading.Thread]::CurrentThread.ManagedThreadId)`" " + `
         "file=`"`">"
 
+    # Fix file already in access
+    Start-Sleep -Milliseconds 50
     # Write the line to the log file
     Add-Content -Path $Path -Value $Content
 }
@@ -380,7 +383,7 @@ Function Test-InESP {
         $AccountSetupCompleteOrSkipped = $true
     }
     
-    if ($DevicePrepComplete -and $DeviceSetupCompleteOrSkipped  -and $AccountSetupCompleteOrSkipped) {
+    if ($DevicePrepComplete -and $DeviceSetupCompleteOrSkipped -and $AccountSetupCompleteOrSkipped) {
         return $false
     }
     else {
@@ -425,8 +428,8 @@ $InESP = Test-InESP -DevicePreparationDetails $DevicePreparation -DeviceSetupDet
 
 
 "----------------------------------------------------- Start Boost-ESP -----------------------------------------------------" | Write-Log
-"LogFile Location  (use OneTrace)   : {0}" -f $PSDefaultParameterValues.'Write-Log:Path' | Write-Log
-"RegPath Location                   : {0}" -f $PSDefaultParameterValues.'*-Config:RegPath' | Write-Log
+"LogFile location  (use OneTrace)   : {0}" -f $PSDefaultParameterValues.'Write-Log:Path' | Write-Log
+"RegPath location                   : {0}" -f $PSDefaultParameterValues.'*-Config:RegPath' | Write-Log
 "Time Zone                          : {0}" -f (Get-TimeZone | select-object DisplayName).DisplayName | Write-Log
 "Last Bootup Time                   : {0}" -f (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime | Write-Log
 "Device on AC (null = no battery)   : {0}" -f (Get-CimInstance -Namespace root/WMI -ClassName BatteryStatus -ErrorAction SilentlyContinue).PowerOnline | Write-Log
@@ -436,17 +439,20 @@ $InESP = Test-InESP -DevicePreparationDetails $DevicePreparation -DeviceSetupDet
 "Current Sleep on AC Value (min)    : {0}" -f ($CurrentSleepOnAC.Minutes) | Write-Log
 "SkipUserStatusPage                 : {0}" -f ($SkipUserStatusPage) | Write-Log
 "SkipDeviceStatusPage               : {0}" -f ($SkipDeviceStatusPage) | Write-Log
-"Device ESP completed (unreliable)  : {0}" -f (Test-ESPCompleted).ToString() | Write-Log
-"User ESP completed (unreliable)    : {0}" -f (Test-ESPCompleted -UserSID (Get-LoggedOnUserSID)).ToString() | Write-Log
-"DevicePreparation ESP Phase status : {0}" -f ($DevicePreparation.categoryState) | Write-Log
-"DeviceSetup ESP Phase status       : {0}" -f ($DeviceSetup.categoryState) | Write-Log
-"AccountSetup ESP Phase status      : {0}" -f ($AccountSetup.categoryState) | Write-Log
+"DevicePreparation ESP phase status : {0}" -f ($DevicePreparation.categoryState) | Write-Log
+"DeviceSetup ESP phase status       : {0}" -f ($DeviceSetup.categoryState) | Write-Log
+"AccountSetup ESP phase status      : {0}" -f ($AccountSetup.categoryState) | Write-Log
 "In ESP                             : {0}" -f ($InESP) | Write-Log -Type Warning
-"List Logged On Users               : {0}" -f (Get-Loggedonuser | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
-"List running processes             : {0}" -f (Get-Process -IncludeUserName | Select-Object -Property ProcessName, PriorityClass, UserName | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "DevicePreparation full status      : {0}" -f ($DevicePreparation | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "DeviceSetup full status            : {0}" -f ($DeviceSetup | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "AccountSetup full status           : {0}" -f ($AccountSetup | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
+
+if ($Debug) {
+    "List logged on users               : {0}" -f (Get-Loggedonuser | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
+    "List running processes             : {0}" -f (Get-Process -IncludeUserName | Select-Object -Property ProcessName, PriorityClass, UserName | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
+    "Device ESP completed (unreliable)  : {0}" -f (Test-ESPCompleted).ToString() | Write-Log
+    "User ESP completed (unreliable)    : {0}" -f (Test-ESPCompleted -UserSID (Get-LoggedOnUserSID)).ToString() | Write-Log
+}
 
 If ($InESP) {
     "Set Mode" | Write-log -Type Warning

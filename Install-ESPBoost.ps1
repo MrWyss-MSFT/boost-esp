@@ -4,7 +4,7 @@ $PSDefaultParameterValues = @{
     "Install-ScheduledTask:TimeToLiveInHours"   = 6
     "Install-ScheduledTask:Author"              = "MrWyss-MSFT"
     "Install-ScheduledTask:TaskName"            = "Boost-ESP"
-    "Install-ScheduledTask:RepetitionInterval"  = (New-TimeSpan -Minutes 10) 
+    "Install-ScheduledTask:RepetitionInterval"  = (New-TimeSpan -Minutes 5) 
 }
 
 Function Install-ScheduledTask {
@@ -41,31 +41,29 @@ Function Install-ScheduledTask {
     )
 
     $OnlineScript = 'Invoke-Expression $($(Invoke-WebRequest -UseBasicParsing -Uri "' + $Uri + '").Content)'
-
-    $Trigger = New-ScheduledTaskTrigger -AtStartup
-    $TempTrigger = New-ScheduledTaskTrigger -Once -At 7am -RepetitionDuration $RepetitionDuration  -RepetitionInterva $RepetitionInterval
-
-
-    $User = "NT AUTHORITY\SYSTEM"
     $Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-NoProfile -NoLogo -NonInteractive -ExecutionPolicy Bypass -Command ""& {$OnlineScript}"""
+
+    $Trigger = New-ScheduledTaskTrigger -Once -At ((Get-Date).AddSeconds(10)) -RepetitionDuration $RepetitionDuration  -RepetitionInterva $RepetitionInterval
+    $User = "NT AUTHORITY\SYSTEM"
+   
     Register-ScheduledTask -TaskName $TaskName -Trigger $Trigger -User $User -Action $Action -RunLevel Highest -Force | out-null
     
+    #region modify task 
+    #get task
     $TargetTask = Get-ScheduledTask -TaskName $TaskName 
-    
-    # Set desired tweaks
+    #tweaks
     $TargetTask.Author = $Author
     $TargetTask.Triggers[0].StartBoundary = [DateTime]::Now.ToString("yyyy-MM-dd'T'HH:mm:ss")
     $TargetTask.Triggers[0].EndBoundary = [DateTime]::Now.AddHours($TimeToLiveInHours).ToString("yyyy-MM-dd'T'HH:mm:ss")
-    $TargetTask.Triggers[0].Repetition = $TempTrigger.Repetition
     $TargetTask.Settings.AllowHardTerminate = $True
     $TargetTask.Settings.DeleteExpiredTaskAfter = 'PT0S'
     $TargetTask.Settings.ExecutionTimeLimit = 'PT1H'
     $TargetTask.Settings.volatile = $False
     $TargetTask.Settings.DisallowStartIfOnBatteries = $False
     
-    # Save tweaks to the Scheduled Task
+    # Save tweaks
     $TargetTask | Set-ScheduledTask | Out-Null
-
+    #endregion
 }
 
 Install-ScheduledTask

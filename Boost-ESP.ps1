@@ -386,17 +386,21 @@ Function Test-InESP {
         return $false
     }
 
-    if (($DevicePreparationDetails.categorySucceeded -eq 'True') -or ($DevicePreparationDetails.categoryState -eq 'succeeded')) {
+    if (($DevicePreparationDetails.categoryStatusText -eq 'Complete') -or ($DevicePreparationDetails.categoryState -eq 'succeeded')) {
         $DevicePrepComplete = $true
     }
-    if (($DeviceSetupDetails.categorySucceeded -eq 'True') -or ($DeviceSetupDetails.categoryState -eq 'succeeded') -or $SkipDeviceStatusPage) {
+    if (($DeviceSetupDetails.categoryStatusText -eq 'Complete') -or ($DeviceSetupDetails.categoryState -eq 'succeeded') -or $SkipDeviceStatusPage) {
         $DeviceSetupCompleteOrSkipped = $true
     }
-    if (($AccountSetupDetails.categorySucceeded -eq 'True') -or ($AccountSetupDetails.categoryState -eq 'succeeded') -or $SkipUserStatusPage) {
+    if (($AccountSetupDetails.categoryStatusText -eq 'Complete') -or ($AccountSetupDetails.categoryState -eq 'succeeded') -or $SkipUserStatusPage) {
         $AccountSetupCompleteOrSkipped = $true
     }
     
+    
     if ($DevicePrepComplete -and $DeviceSetupCompleteOrSkipped -and $AccountSetupCompleteOrSkipped) {
+        return $false
+    }
+    elseif (($DevicePreparationDetails.categoryState -like "failed*") -or ($DeviceSetupDetails.categoryState -like "failed*") -or ($AccountSetupDetails.categoryState -like "failed*")) {
         return $false
     }
     else {

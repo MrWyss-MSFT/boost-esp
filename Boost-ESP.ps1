@@ -454,6 +454,10 @@ Function Get-SkipStatusPage () {
 #endregion
 
 #region logic
+$MaxClockSpeed = ((Get-CimInstance CIM_Processor).MaxClockSpeed)
+$MemoryInfo = (Get-CIMInstance Win32_OperatingSystem | select-object TotalVisibleMemorySize, FreePhysicalMemory, @{Name = 'Usage'; Expression = {[int](($_.TotalVisibleMemorySize - $_.FreePhysicalMemory))}})
+$ProcessorPerformance = ((Get-Counter -Counter "\Processor Information(_Total)\% Processor Performance").CounterSamples.CookedValue)
+$CurrentClockSpeed = ($MaxClockSpeed * ($ProcessorPerformance / 100))
 $TimeZone = (Get-TimeZone | select-object DisplayName).DisplayName 
 $LastBootupTime = (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime
 $OnBattery = (Get-CimInstance -Namespace root/WMI -ClassName BatteryStatus -ErrorAction SilentlyContinue).PowerOnline
@@ -473,6 +477,10 @@ $InESP = Test-InESP -DevicePreparationDetails $DevicePreparation -DeviceSetupDet
 "RegPath location                   : {0}" -f ($PSDefaultParameterValues.'*-Config:RegPath') | Write-Log
 "Time Zone                          : {0}" -f ($TimeZone) | Write-Log
 "Last Bootup Time                   : {0}" -f ($LastBootupTime) | Write-Log
+"CPU Speed (mhz)                    : {0}" -f ([int]$CurrentClockSpeed) | Write-Log
+"Total Memory (gb)                  : {0}" -f ([int]($MemoryInfo.TotalVisibleMemorySize /1MB)) | Write-Log
+"Usage Memory (gb)                  : {0}" -f ([int]($MemoryInfo.Usage /1MB)) | Write-Log
+"Free Memory (gb)                   : {0}" -f ([int]($MemoryInfo.FreePhysicalMemory / 1MB)) | Write-Log
 "Device on AC (null = no battery)   : {0}" -f ($OnBattery) | Write-Log
 "Current Power Scheme Name          : {0}" -f ($CurrentPowerScheme.Name) | Write-Log
 "Current Power Mode Name            : {0}" -f ($CurrentPowerMode.Name) | Write-Log

@@ -467,6 +467,7 @@ $CurrentSleepOnAC = Get-SleepTimeOutOnAC -SchemeGuid $CurrentPowerScheme.Guid
 $DevicePreparation = Get-ESPProgress -Phase DevicePreparation
 $DeviceSetup = Get-ESPProgress -Phase DeviceSetup
 $AccountSetup = Get-ESPProgress -Phase AccountSetup
+$DOStatus = Get-DeliveryOptimizationStatus | Select-Object *
 $InESP = Test-InESP -DevicePreparationDetails $DevicePreparation -DeviceSetupDetails $DeviceSetup -AccountSetupDetails $AccountSetup -SkipUserStatusPage $SkipUserStatusPage -SkipDeviceStatusPage $SkipDeviceStatusPage
 
 
@@ -492,6 +493,7 @@ $InESP = Test-InESP -DevicePreparationDetails $DevicePreparation -DeviceSetupDet
 "DevicePreparation full status      : {0}" -f ($DevicePreparation | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "DeviceSetup full status            : {0}" -f ($DeviceSetup | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "AccountSetup full status           : {0}" -f ($AccountSetup | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
+"DeliveryOptimization status        : {0}" -f ($DOStatus | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "In ESP                             : {0}" -f ($InESP) | Write-Log -Type Warning
 if ($Debug) {
     "List logged on users               : {0}" -f (Get-Loggedonuser | ConvertTo-Json) | Write-Log -ConsoleOutput:$false

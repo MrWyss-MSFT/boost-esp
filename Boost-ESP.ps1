@@ -454,17 +454,22 @@ Function Get-SkipStatusPage () {
 #endregion
 
 #region logic
-$TimeZone = (Get-TimeZone | select-object DisplayName).DisplayName 
+$TimeZone = (Get-TimeZone | select-object DisplayName).DisplayName
 $LastBootupTime = (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime
+$MaxClockSpeed = ((Get-CimInstance CIM_Processor).MaxClockSpeed)
+$ProcessorPerformance = ((Get-Counter -Counter "\Processor Information(_Total)\% Processor Performance").CounterSamples.CookedValue)
+$CurrentClockSpeed = ($MaxClockSpeed * ($ProcessorPerformance / 100))
+$MemoryInfo = (Get-CIMInstance Win32_OperatingSystem | select-object TotalVisibleMemorySize, FreePhysicalMemory, @{Name = 'Usage'; Expression = {[int](($_.TotalVisibleMemorySize - $_.FreePhysicalMemory))}})
 $OnBattery = (Get-CimInstance -Namespace root/WMI -ClassName BatteryStatus -ErrorAction SilentlyContinue).PowerOnline
 $CurrentPowerScheme = Get-CurrentPowerScheme
 $CurrentPowerMode = Get-PowerMode
 $CurrentSleepOnAC = Get-SleepTimeOutOnAC -SchemeGuid $CurrentPowerScheme.Guid
+$SkipDeviceStatusPage = Get-SkipStatusPage -Device
+$SkipUserStatusPage = Get-SkipStatusPage -User
 $DevicePreparation = Get-ESPProgress -Phase DevicePreparation
 $DeviceSetup = Get-ESPProgress -Phase DeviceSetup
 $AccountSetup = Get-ESPProgress -Phase AccountSetup
-$SkipUserStatusPage = Get-SkipStatusPage -User
-$SkipDeviceStatusPage = Get-SkipStatusPage -Device
+$DOStatus = Get-DeliveryOptimizationStatus | Select-Object *
 $InESP = Test-InESP -DevicePreparationDetails $DevicePreparation -DeviceSetupDetails $DeviceSetup -AccountSetupDetails $AccountSetup -SkipUserStatusPage $SkipUserStatusPage -SkipDeviceStatusPage $SkipDeviceStatusPage
 
 
@@ -473,19 +478,24 @@ $InESP = Test-InESP -DevicePreparationDetails $DevicePreparation -DeviceSetupDet
 "RegPath location                   : {0}" -f ($PSDefaultParameterValues.'*-Config:RegPath') | Write-Log
 "Time Zone                          : {0}" -f ($TimeZone) | Write-Log
 "Last Bootup Time                   : {0}" -f ($LastBootupTime) | Write-Log
+"CPU Speed (mhz)                    : {0}" -f ([int]$CurrentClockSpeed) | Write-Log
+"Total Memory (gb)                  : {0}" -f ([int]($MemoryInfo.TotalVisibleMemorySize /1MB)) | Write-Log
+"Usage Memory (gb)                  : {0}" -f ([int]($MemoryInfo.Usage /1MB)) | Write-Log
+"Free Memory (gb)                   : {0}" -f ([int]($MemoryInfo.FreePhysicalMemory / 1MB)) | Write-Log
 "Device on AC (null = no battery)   : {0}" -f ($OnBattery) | Write-Log
 "Current Power Scheme Name          : {0}" -f ($CurrentPowerScheme.Name) | Write-Log
 "Current Power Mode Name            : {0}" -f ($CurrentPowerMode.Name) | Write-Log
 "Current Power Mode Guid            : {0}" -f ($CurrentPowerMode.Value) | Write-Log
 "Current Sleep on AC Value (min)    : {0}" -f ($CurrentSleepOnAC.Minutes) | Write-Log
-"SkipUserStatusPage                 : {0}" -f ($SkipUserStatusPage) | Write-Log
 "SkipDeviceStatusPage               : {0}" -f ($SkipDeviceStatusPage) | Write-Log
+"SkipUserStatusPage                 : {0}" -f ($SkipUserStatusPage) | Write-Log
 "DevicePreparation ESP phase status : {0}" -f ($DevicePreparation.categoryState) | Write-Log
 "DeviceSetup ESP phase status       : {0}" -f ($DeviceSetup.categoryState) | Write-Log
 "AccountSetup ESP phase status      : {0}" -f ($AccountSetup.categoryState) | Write-Log
 "DevicePreparation full status      : {0}" -f ($DevicePreparation | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "DeviceSetup full status            : {0}" -f ($DeviceSetup | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "AccountSetup full status           : {0}" -f ($AccountSetup | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
+"DeliveryOptimization status        : {0}" -f ($DOStatus | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
 "In ESP                             : {0}" -f ($InESP) | Write-Log -Type Warning
 if ($Debug) {
     "List logged on users               : {0}" -f (Get-Loggedonuser | ConvertTo-Json) | Write-Log -ConsoleOutput:$false

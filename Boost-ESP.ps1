@@ -454,12 +454,12 @@ Function Get-SkipStatusPage () {
 #endregion
 
 #region logic
+$TimeZone = (Get-TimeZone | select-object DisplayName).DisplayName
+$LastBootupTime = (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime
 $MaxClockSpeed = ((Get-CimInstance CIM_Processor).MaxClockSpeed)
-$MemoryInfo = (Get-CIMInstance Win32_OperatingSystem | select-object TotalVisibleMemorySize, FreePhysicalMemory, @{Name = 'Usage'; Expression = {[int](($_.TotalVisibleMemorySize - $_.FreePhysicalMemory))}})
 $ProcessorPerformance = ((Get-Counter -Counter "\Processor Information(_Total)\% Processor Performance").CounterSamples.CookedValue)
 $CurrentClockSpeed = ($MaxClockSpeed * ($ProcessorPerformance / 100))
-$TimeZone = (Get-TimeZone | select-object DisplayName).DisplayName 
-$LastBootupTime = (Get-CimInstance win32_operatingsystem | Select-Object lastbootuptime).lastbootuptime
+$MemoryInfo = (Get-CIMInstance Win32_OperatingSystem | select-object TotalVisibleMemorySize, FreePhysicalMemory, @{Name = 'Usage'; Expression = {[int](($_.TotalVisibleMemorySize - $_.FreePhysicalMemory))}})
 $OnBattery = (Get-CimInstance -Namespace root/WMI -ClassName BatteryStatus -ErrorAction SilentlyContinue).PowerOnline
 $CurrentPowerScheme = Get-CurrentPowerScheme
 $CurrentPowerMode = Get-PowerMode
@@ -467,8 +467,6 @@ $CurrentSleepOnAC = Get-SleepTimeOutOnAC -SchemeGuid $CurrentPowerScheme.Guid
 $DevicePreparation = Get-ESPProgress -Phase DevicePreparation
 $DeviceSetup = Get-ESPProgress -Phase DeviceSetup
 $AccountSetup = Get-ESPProgress -Phase AccountSetup
-$SkipUserStatusPage = Get-SkipStatusPage -User
-$SkipDeviceStatusPage = Get-SkipStatusPage -Device
 $InESP = Test-InESP -DevicePreparationDetails $DevicePreparation -DeviceSetupDetails $DeviceSetup -AccountSetupDetails $AccountSetup -SkipUserStatusPage $SkipUserStatusPage -SkipDeviceStatusPage $SkipDeviceStatusPage
 
 

@@ -483,9 +483,9 @@ $InESP = Test-InESP -DevicePreparationDetails $DevicePreparation -DeviceSetupDet
 "Time Zone                          : {0}" -f ($TimeZone) | Write-Log
 "Last Bootup Time                   : {0}" -f ($LastBootupTime) | Write-Log
 "CPU Speed (mhz)                    : {0}" -f ([int]$CurrentClockSpeed) | Write-Log
-"Total Memory (gb)                  : {0}" -f ([int]($MemoryInfo.TotalVisibleMemorySize /1MB)) | Write-Log
-"Usage Memory (gb)                  : {0}" -f ([int]($MemoryInfo.Usage /1MB)) | Write-Log
-"Free Memory (gb)                   : {0}" -f ([int]($MemoryInfo.FreePhysicalMemory / 1MB)) | Write-Log
+"Total Memory (mb)                  : {0}" -f ([int]($MemoryInfo.TotalVisibleMemorySize /1KB)) | Write-Log
+"Usage Memory (mb)                  : {0}" -f ([int]($MemoryInfo.Usage /1KB)) | Write-Log
+"Free Memory (mb)                   : {0}" -f ([int]($MemoryInfo.FreePhysicalMemory / 1KB)) | Write-Log
 "Device on AC (null = no battery)   : {0}" -f ($OnBattery) | Write-Log
 "Current Power Scheme Name          : {0}" -f ($CurrentPowerScheme.Name) | Write-Log
 "Current Power Mode Name            : {0}" -f ($CurrentPowerMode.Name) | Write-Log

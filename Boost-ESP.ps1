@@ -484,8 +484,8 @@ $InESP = Test-InESP -DevicePreparationDetails $DevicePreparation -DeviceSetupDet
 "Current Power Mode Name            : {0}" -f ($CurrentPowerMode.Name) | Write-Log
 "Current Power Mode Guid            : {0}" -f ($CurrentPowerMode.Value) | Write-Log
 "Current Sleep on AC Value (min)    : {0}" -f ($CurrentSleepOnAC.Minutes) | Write-Log
-"SkipUserStatusPage                 : {0}" -f ($SkipUserStatusPage) | Write-Log
 "SkipDeviceStatusPage               : {0}" -f ($SkipDeviceStatusPage) | Write-Log
+"SkipUserStatusPage                 : {0}" -f ($SkipUserStatusPage) | Write-Log
 "DevicePreparation ESP phase status : {0}" -f ($DevicePreparation.categoryState) | Write-Log
 "DeviceSetup ESP phase status       : {0}" -f ($DeviceSetup.categoryState) | Write-Log
 "AccountSetup ESP phase status      : {0}" -f ($AccountSetup.categoryState) | Write-Log

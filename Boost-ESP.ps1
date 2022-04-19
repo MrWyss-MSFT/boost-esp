@@ -33,14 +33,14 @@ $PSDefaultParameterValues = @{
 
 #region powerprof.dll methods
 #https://stackoverflow.com/questions/61869347/control-windows-10s-power-mode-programmatically
-$function = @'
+$function = @"
 [DllImport("powrprof.dll", EntryPoint="PowerSetActiveOverlayScheme")]
 public static extern int PowerSetActiveOverlayScheme(Guid OverlaySchemeGuid);
 [DllImport("powrprof.dll", EntryPoint="PowerGetActualOverlayScheme")]
 public static extern int PowerGetActualOverlayScheme(out Guid ActualOverlayGuid);
 [DllImport("powrprof.dll", EntryPoint="PowerGetEffectiveOverlayScheme")]
 public static extern int PowerGetEffectiveOverlayScheme(out Guid EffectiveOverlayGuid);
-'@
+"@
 $power = Add-Type -MemberDefinition $function -Name "Power" -PassThru -Namespace System.Runtime.InteropServices
 #endregion
 
@@ -121,6 +121,7 @@ Function Get-PowerModeByGuid {
         [guid]
         $Guid
     )
+
     return $($($modes.GetEnumerator() | Where-Object { $_.value -eq $Guid }).Key)
 }
 Function Set-PowerMode {
@@ -134,6 +135,7 @@ Function Set-PowerMode {
         [guid]
         $Guid
     )
+
     try {
         $power::PowerSetActiveOverlayScheme($Guid) | Out-Null
     }
@@ -172,6 +174,7 @@ function Set-SleepTimeOutOnAC {
         [int]
         $TimeOutInMinutes
     )
+
     powercfg /change standby-timeout-ac $TimeOutInMinutes
 }
 Function Get-CurrentPowerScheme {
@@ -184,43 +187,6 @@ Function Get-CurrentPowerScheme {
         Guid = (powercfg /GETACTIVESCHEME).split()[3]
     }
     $power
-}
-Function Test-ESPCompleted {
-    <#
-    .SYNOPSIS
-    Don't know if this is reliable
-    #>
-    param (
-        [Parameter(Mandatory = $false)]
-        [string]$UserSID
-    )
-    $RegPath = ""
-
-    if ($UserSID -ne "") {
-        $RegPath = "HKLM:\SOFTWARE\Microsoft\Windows\Autopilot\EnrollmentStatusTracking\{0}\Setup" -f $UserSID
-        try {
-            $val = Get-ItemPropertyValue -Path $RegPath -Name HasProvisioningCompleted -ErrorAction Stop 
-            $val = "0x{0:x}" -f $val
-            [bool][int32]$val
-        }
-        catch {
-            $false
-        }
-    }
-    else {
-        $RegPath = "HKLM:\SOFTWARE\Microsoft\Windows\Autopilot\EnrollmentStatusTracking\Device\Setup"
-        try {
-            $val = Get-ItemPropertyValue -Path $RegPath -Name HasProvisioningCompleted -ErrorAction Stop
-            $val = "0x{0:x}" -f $val
-            [bool][int32]$val
-        }
-        catch {
-            $Namespace = "root\cimv2\mdm\dmmap"
-            $ClassName = "MDM_EnrollmentStatusTracking_Setup01"
-            $ret = if ($(Get-CimInstance -Class $ClassName -Namespace $Namespace).HasProvisioningCompleted -eq "True") { $true } else { $false }
-            return $ret
-        }
-    }
 }
 Function Save-Config {
     <#
@@ -275,14 +241,9 @@ Function Test-Config {
         [String]
         $RegPath
     )
-    if (Test-Path -Path $RegPath) {
-        if ($null -ne (Get-Item -Path $RegPath).GetValue($PreScriptValue)) {
-            return $true
-        }
-    }
-    else {
-        $false
-    }
+    if ($false -eq (Test-Path -Path $RegPath)) { return $false }  
+    if ($null -eq (Get-Item -Path $RegPath).GetValue($PreScriptValue)) { return $false }
+    return $true
 }
 Function Get-Loggedonuser {
     <#
@@ -324,26 +285,6 @@ Function Get-Loggedonuser {
         $loggedonuser | Add-Member -MemberType NoteProperty -Name "Auth" -Value $_.authenticationpackage
         $loggedonuser | Add-Member -MemberType NoteProperty -Name "StartTime" -Value $starttime
         $loggedonuser
-    }
-}
-Function Get-LoggedOnUserSID {
-    <#
-    .SYNOPSIS
-    This function queries the registry to find the SID of the user that's currently logged onto the computer interactively.
-    ref: https://adamtheautomator.com/powershell-get-user-sid/
-    #>
-    [CmdletBinding()]
-    param ()
-    
-    process {
-        try {
-            New-PSDrive -Name HKU -PSProvider Registry -Root Registry::HKEY_USERS | Out-Null
-            (Get-ChildItem HKU: | Where-Object { $_.Name -match 'S-\d-\d+-(\d+-){1,14}\d+$' }).PSChildName
-        }
-        catch {
-            Write-Error -Message "Error: $($_.Exception.Message) - Line Number: $($_.InvocationInfo.ScriptLineNumber)"
-            $false
-        }
     }
 }
 Function Test-InESP {
@@ -400,12 +341,12 @@ Function Test-InESP {
     if ($DevicePrepComplete -and $DeviceSetupCompleteOrSkipped -and $AccountSetupCompleteOrSkipped) {
         return $false
     }
-    elseif (($DevicePreparationDetails.categoryState -like "failed*") -or ($DeviceSetupDetails.categoryState -like "failed*") -or ($AccountSetupDetails.categoryState -like "failed*")) {
+    if (($DevicePreparationDetails.categoryState -like "failed*") -or ($DeviceSetupDetails.categoryState -like "failed*") -or ($AccountSetupDetails.categoryState -like "failed*")) {
         return $false
     }
-    else {
-        return $true
-    }
+
+    return $true
+    
 }
 Function Get-ESPProgress () {
     <#
@@ -463,7 +404,7 @@ $LastBootupTime = (Get-CimInstance win32_operatingsystem | Select-Object lastboo
 $MaxClockSpeed = ((Get-CimInstance CIM_Processor).MaxClockSpeed)
 $ProcessorPerformance = ((Get-Counter -Counter "\Processor Information(_Total)\% Processor Performance").CounterSamples.CookedValue)
 $CurrentClockSpeed = ($MaxClockSpeed * ($ProcessorPerformance / 100))
-$MemoryInfo = (Get-CIMInstance Win32_OperatingSystem | select-object TotalVisibleMemorySize, FreePhysicalMemory, @{Name = 'Usage'; Expression = {[int](($_.TotalVisibleMemorySize - $_.FreePhysicalMemory))}})
+$MemoryInfo = (Get-CIMInstance Win32_OperatingSystem | select-object TotalVisibleMemorySize, FreePhysicalMemory, @{Name = 'Usage'; Expression = { [int](($_.TotalVisibleMemorySize - $_.FreePhysicalMemory)) } })
 $OnBattery = (Get-CimInstance -Namespace root/WMI -ClassName BatteryStatus -ErrorAction SilentlyContinue).PowerOnline
 $CurrentPowerScheme = Get-CurrentPowerScheme
 $CurrentPowerMode = Get-PowerMode
@@ -483,8 +424,8 @@ $InESP = Test-InESP -DevicePreparationDetails $DevicePreparation -DeviceSetupDet
 "Time Zone                          : {0}" -f ($TimeZone) | Write-Log
 "Last Bootup Time                   : {0}" -f ($LastBootupTime) | Write-Log
 "CPU Speed (mhz)                    : {0}" -f ([int]$CurrentClockSpeed) | Write-Log
-"Total Memory (mb)                  : {0}" -f ([int]($MemoryInfo.TotalVisibleMemorySize /1KB)) | Write-Log
-"Usage Memory (mb)                  : {0}" -f ([int]($MemoryInfo.Usage /1KB)) | Write-Log
+"Total Memory (mb)                  : {0}" -f ([int]($MemoryInfo.TotalVisibleMemorySize / 1KB)) | Write-Log
+"Usage Memory (mb)                  : {0}" -f ([int]($MemoryInfo.Usage / 1KB)) | Write-Log
 "Free Memory (mb)                   : {0}" -f ([int]($MemoryInfo.FreePhysicalMemory / 1KB)) | Write-Log
 "Device on AC (null = no battery)   : {0}" -f ($OnBattery) | Write-Log
 "Current Power Scheme Name          : {0}" -f ($CurrentPowerScheme.Name) | Write-Log
@@ -504,8 +445,6 @@ $InESP = Test-InESP -DevicePreparationDetails $DevicePreparation -DeviceSetupDet
 if ($Debug) {
     "List logged on users               : {0}" -f (Get-Loggedonuser | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
     "List running processes             : {0}" -f (Get-Process -IncludeUserName | Select-Object -Property ProcessName, PriorityClass, UserName | ConvertTo-Json) | Write-Log -ConsoleOutput:$false
-    "Device ESP completed (unreliable)  : {0}" -f (Test-ESPCompleted).ToString() | Write-Log
-    "User ESP completed (unreliable)    : {0}" -f (Test-ESPCompleted -UserSID (Get-LoggedOnUserSID)).ToString() | Write-Log
 }
 
 If ($InESP) {
@@ -514,6 +453,7 @@ If ($InESP) {
     #region Set Power Mode
     "Current PowerMode Name             : {0}, Guid: {1}" -f $CurrentPowerMode.Name, $CurrentPowerMode.Value | Write-Log
     "Desired PowerMode                  : {0}, Guid: {1}" -f (Get-PowerModeByGuid -Guid $DesiredModeGuid), $DesiredModeGuid | Write-Log
+    
     if ($CurrentPowerMode.Value -ne $DesiredModeGuid) {
         Set-PowerMode -Guid $DesiredModeGuid
         "  Set PowerMode to {0}" -f (Get-PowerModeByGuid -Guid $DesiredModeGuid) | Write-Log -Type Warning
@@ -526,6 +466,7 @@ If ($InESP) {
     #region Set Sleep
     "Current Sleep Timeout on AC (min)  : {0}" -f $CurrentSleepOnAC.Minutes | Write-Log 
     "Desired Sleep Timeout on AC (min)  : {0}" -f $DesiredSleepTimeoutOnACInMinutes | Write-Log
+    
     if ($CurrentSleepOnAC.Minutes -ne $DesiredSleepTimeoutOnACInMinutes) {
         Set-SleepTimeOutOnAC -TimeOutInMinutes $DesiredSleepTimeoutOnACInMinutes
         "  Set Sleep Timeout on AC to {0} (min)" -f $DesiredSleepTimeoutOnACInMinutes | Write-Log -Type Warning
@@ -545,7 +486,8 @@ If ($InESP) {
     }
     #endregion
 }
-else {
+
+If (!$InESP) {
     "Revert Mode" | Write-log -Type Warning
 
     #region Revert previously saved PowerMode if it was saved

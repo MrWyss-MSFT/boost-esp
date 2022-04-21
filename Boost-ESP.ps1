@@ -48,7 +48,7 @@ $power = Add-Type -MemberDefinition $function -Name "Power" -PassThru -Namespace
 Function Write-Log {
     <#
     .SYNOPSIS
-    Writes CMTrace log file, customized version of https://janikvonrotz.ch/2017/10/26/powershell-logging-in-cmtrace-format/
+    Writes CMTrace log file and console output, customized version of https://janikvonrotz.ch/2017/10/26/powershell-logging-in-cmtrace-format/
     #>
 
     [CmdletBinding()]

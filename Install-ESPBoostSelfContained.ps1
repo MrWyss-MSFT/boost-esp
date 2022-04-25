@@ -1,6 +1,6 @@
 #Requires -RunAsAdministrator
 
-#region Boost-ESP.ps1 v1.0.1-24-gcd3c515
+#region Boost-ESP.ps1 v1.0.4-ff880f9fcbec3edaf7cf231b9b4faa6966cefc7f
 $scheduledTaskScript = @'
 <#
   .SYNOPSIS
